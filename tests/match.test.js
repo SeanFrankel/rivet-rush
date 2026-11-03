@@ -24,3 +24,19 @@ test("the opposing crew can destroy an undefended reactor",()=>{
   const m=Yard.create();advance(m,420);
   assert.equal(m.winner,1);
 });
+test("a sentry warns before firing and jumping clears the locked shot",()=>{
+  function encounter(jump) {
+    const m=Yard.create();
+    const sentry=m.units.find(u=>u.kind==="sentry"&&u.team===1);
+    m.units=[sentry,m.player];
+    m.player.x=sentry.x-120;
+    advance(m,.4);
+    assert.equal(sentry.aim.x,m.player.x);
+    assert.equal(m.shots.length,0);
+    advance(m,.35,tick=>({jump:jump&&tick===0}));
+    assert.equal(sentry.aim,null);
+    return m.player.hp;
+  }
+  assert.equal(encounter(false),123);
+  assert.equal(encounter(true),135);
+});

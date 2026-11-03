@@ -59,6 +59,14 @@ function drawUnit(u){
     poly([[-14,-8],[-9,-18],[5,-18],[14,-10],[12,-6]],d);
     box(-6,-16,13,4,c);box(7,-13,13,3,"#d7c9ae");
   }else if(u.kind==="sentry"){
+    if(u.aim){
+      const dx=(u.aim.x-u.x)*u.dir,dy=u.aim.y-(u.y-Yard.height(u)/2);
+      const length=Math.hypot(dx,dy)||1;
+      ctx.save();ctx.setLineDash([6,6]);
+      line(0,-24,dx/length*(u.range+24),-24+dy/length*(u.range+24),"#ffe2aa",2);
+      ctx.restore();
+      circle(0,-48,4,"#fff1c9");
+    }
     poly([[-24,0],[-13,-13],[-9,-43],[10,-43],[14,-13],[23,0]],"#344552");
     box(-13,-46,23,17,d);box(-8,-43,16,4,c);box(4,-36,26,8,"#bbc1bc");
     box(-13,-14,25,5,c);

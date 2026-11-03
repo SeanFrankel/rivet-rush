@@ -39,13 +39,34 @@ const Yard = (() => {
       if(u.kind==="reactor")m.winner=1-u.team;
     }
   }
-  function fire(m,u,target) {
+  function fire(m,u,x,y) {
     if(u.cd>0)return;
-    const dx=target?target.x-u.x:u.dir,dy=target?middle(target)-middle(u):0;
+    const dx=x-u.x,dy=y-middle(u);
     const len=Math.hypot(dx,dy)||1;
     m.shots.push({x:u.x,y:middle(u),vx:dx/len*600,vy:dy/len*600,team:u.team,damage:u.damage,left:u.range+24});
     u.cd=u.rate;
   }
+  function fireAtUnit(m,u,target) {
+    fire(m,u,target ? target.x : u.x+u.dir,target ? middle(target) : middle(u));
+  }
+  function sentryStep(m,u,dt) {
+    if(u.aim){
+      u.aim.remaining-=dt;
+      if(u.aim.remaining<=0){
+        fire(m,u,u.aim.x,u.aim.y);
+        u.aim=null;
+        u.cd-=sentryWindup;
+      }
+      return;
+    }
+    if(u.cd>0)return;
+    const target=targetFor(m,u,u.range);
+    if(target){
+      u.dir=Math.sign(target.x-u.x)||u.dir;
+      u.aim={x:target.x,y:middle(target),remaining:sentryWindup};
+    }
+  }
+  const sentryWindup=.42;
   function platforms(m){return m.bridge>0?[...ledges,[755,1025,208]]:ledges;}
   function targetFor(m,u,range,front=false){
     let best=null,dist=range;
@@ -66,7 +87,7 @@ const Yard = (() => {
     for(const [a,b,y] of [...platforms(m),[0,width,floor]]){
       if(u.x>=a&&u.x<=b&&old<=y&&u.y>=y){u.y=y;u.vy=0;u.jumps=0;break;}
     }
-    if(k.fire)fire(m,u,targetFor(m,u,u.range,true));
+    if(k.fire)fireAtUnit(m,u,targetFor(m,u,u.range,true));
     if(k.pulse&&m.pulse<=0){
       m.fx.push({x:u.x,y:middle(u),life:.36,size:128});
       for(const other of m.units)if(other.team!==u.team&&Math.hypot(other.x-u.x,middle(other)-middle(u))<=128)hit(m,other,36);
@@ -94,8 +115,9 @@ const Yard = (() => {
         }continue;
       }
       if(u===m.player){playerStep(m,u,k,dt);continue;}
+      if(u.kind==="sentry"){sentryStep(m,u,dt);continue;}
       const target=targetFor(m,u,u.range);
-      if(target){u.dir=Math.sign(target.x-u.x)||u.dir;fire(m,u,target);}
+      if(target){u.dir=Math.sign(target.x-u.x)||u.dir;fireAtUnit(m,u,target);}
       else {u.dir=u.team===0?1:-1;u.x=Math.max(20,Math.min(width-20,u.x+u.dir*u.speed*dt));}
     }
     for(const s of m.shots){

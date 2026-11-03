@@ -16,9 +16,11 @@ Open `index.html` in a desktop browser and select **Deploy pilot**. The game run
 | 1 | Spend 12 crew scrap on a damage upgrade, up to three times. |
 | Escape | Pause or resume |
 
-Crawlers deploy every 12 seconds. Stay behind them while they draw sentry fire. Enemy losses earn crew scrap, even when a friendly crawler lands the final shot. Pilots return five seconds after destruction. The upper platforms offer a route over the central fight.
+Crawlers deploy every 12 seconds. Stay behind them while they draw sentry fire, or wait for the dashed aiming line and jump clear before the shot arrives. Enemy losses earn crew scrap, even when a friendly crawler lands the final shot. Pilots return five seconds after destruction. The upper platforms offer a route over the central fight.
 
 ## Development
+
+Start with the [game handbook](docs/README.md) for mechanics, design research, playtesting and the beta roadmap. Contributors and agents should follow the [repository rules](AGENTS.md) and [documentation update matrix](docs/updating.md) with every change.
 
 The prototype has one arena, one playable pilot and one opposing bot. All characters, environment art and combat rules are implemented for this project. The bot and crawlers fight along the lower deck. Multiplayer is outside this first build.
 

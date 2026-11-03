@@ -1,0 +1,21 @@
+# How documentation changes
+
+The change author updates the canonical page while the implementation is in review. A reviewer compares the description with the diff and one executable check or observation. On a direct push the author performs that review and records the result in the handoff. Apply every row that matches.
+
+| Trigger | Edit in the same change | Verify before merge |
+| --- | --- | --- |
+| Movement, attacks, stats, death, targeting, bot priorities, rewards or win rules | Game rules and affected simulation tests. Update player README for advice or controls made obsolete. | Exercise the ordinary action, its boundary and its consequence in a match. |
+| Map geometry, routes, spawns, bridge or timing | Game rules, route tests and any affected player guidance. | Traverse the route, test expiration, check both crews' access if applicable. |
+| Input, HUD, player feedback, onboarding or accessibility | Player README, in-game prompts and smoke steps. Update game rules when interpretation changes. | Start with a fresh browser session and complete the affected task. |
+| Build, dependencies, file boundaries, platform, server or deployment | Verification guide and launch instructions. Introduce a linked operator runbook when a service first ships. | Follow the new instructions on a clean checkout or staging deploy. |
+| New asset, dependency or adapted public code | Third-party notices for reused material, with upstream revision, license and scope. | Verify distribution includes the required notices. |
+| Change to a design principle, balance hypothesis or playtest result | Design guide or a dated session note linked there. Carry the resulting decision into the roadmap. | Separate observations from interpretation. Record denominator, build and conditions. |
+| Feature ships, slips, is dropped or fails a gate | Roadmap milestone status and evidence. Move shipped rules to game rules. Update verification and known limits. | Verify evidence against the exact candidate before marking complete. |
+| New documentation category, rename or removal | Handbook index, inbound links, this matrix and root rules if the process changed. | Run the documentation link check. |
+| Pure refactor with identical behavior | Update verification if module boundaries or commands moved. Otherwise explain the no-impact finding in review. | Run regression checks. |
+
+**Example.** Increasing the crane timer from 10 to 14 seconds changes timing in the rules, the player README and a reachability test. Search for the old value in HUD messages and tests. Record the design question (does the extra time buy a second useful route?) in the playtest note. A passing timer assertion alone cannot answer it.
+
+**Review cadence.** At milestone start, check assumptions and owners. At milestone exit, walk the fresh-player instructions, review open playtest findings and record the tested revision beside the gate. At release, link the candidate, known issues, rollback target and run results from the roadmap. Recheck external sources when a claim dependent on them changes.
+
+**History.** Use Git for old values. Keep current rules in one place and link to them. For a consequential decision, record date, build, alternatives, evidence, decision and trigger for revisiting it on the owning page. Give reusable playtest records their own file under `docs/playtests/` and link them from the design guide. Publish anonymous summaries only.
