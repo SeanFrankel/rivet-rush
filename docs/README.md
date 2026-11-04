@@ -17,3 +17,5 @@
 Current product baseline: offline 1v1 and 2v2 plus private four-seat rooms, six pilot kits, three arenas, a farm economy, lane and secondary objectives, movement practice and saved replays. Milestones in the roadmap describe future releases. Follow the [contributor rules](../AGENTS.md) for changes to either.
 
 **Brightwork is a proposal awaiting the owner's review and edits.** Keep the current in-game art, assets and visual direction while mechanics work continues. Once approved, the central art document will guide future production; it distinguishes proposed targets from shipped behavior and keeps gameplay/readability ahead of polish.
+
+**Development decision pause:** the owner is completing D1–D8 before game implementation resumes. [Recorded answers](roadmap.md) set a future 4v4 main mode, 15–20-minute average matches and ranked as part of the return loop; those are target decisions, not shipped features. D3/D4 are partial and D5–D8 remain open. Continue clarification and documentation during this phase.

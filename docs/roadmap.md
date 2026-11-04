@@ -1,20 +1,22 @@
 # From the Kiln Yard to a friends beta
 
-**Decision requested at the finish line:** Can the host send a private link to four friends on different home networks, step away, and have them play, finish and rematch a fair 2v2? Can a second operator diagnose a failed match and safely restore the last good build? Both outcomes are required to open the beta.
+**Current instruction · 2026-11-03:** Pause game implementation while the owner completes the key design decisions below. Continue recording answers and helping clarify them; do not implement the new format, tune mechanics, produce art or deploy game changes during this decision phase. The owner has selected **4v4 as the main mode**, with **15–20-minute average matches and the possibility of 30-minute-plus games**. The current playable build remains a four-seat prototype, not an implementation of this new target.
 
 **Release status.** The repository now contains offline skirmishes and four-seat, server-authoritative private rooms. The implementation includes six distinct pilots, three selectable arenas with siege, capture and supply objectives, lane farming, upgrades and a reactor finish. The local room and network drills provide engineering evidence. Internet staging and independent human playtests are still required. Use the [game rules](gameplay.md) for shipped behavior and the [verification guide](verification.md) to repeat the checks.
 
 ## Product contract
 
-Ship one hosted region, three maps, six complementary pilot kits, two pilots per crew, and a private ready-up room. Four humans get a full 2v2. Two friends can play on the same side against bots or on opposite sides with one bot each. Empty seats can be filled with bots before deploy. Keep solo offline practice. A first-time friend needs only a desktop browser, keyboard and invite. Support desktop Chrome, Edge and Firefox on the tested OS/browser combinations below.
+The owner's target is a movement-driven 2D MOBA for platform-fighter and MOBA players, with excellent mechanics, a fresh take on the genre, easy pickup sessions with friends and skill improvement through ranked play. Main mode: **4v4**. Average match duration: **15–20 minutes**, with long games allowed to run **30 minutes or more**. Intended arc: minutes **1–5 laning**, **6–15 midgame teamfighting and heavy farming**, and **15+ endgame**. These are intended phases, not authorization to implement rigid timed restrictions. 1v1 and 2v2 are optional practice/alternative modes for beta.
 
-The reason to play with a friend is the fight around a wave. A Warden can shield the escort while a Runner launches an enemy away from the Breaker. A crew can trade lane pressure for the upper vault or punish an opponent that rotates too early. Test whether moving, farming and fighting feel good from both sides and whether the loser can describe a useful response. The optional bridge is one route through this arena.
+Six heroes, four active abilities per hero, a melee/ranged mix and three maps remain established scope. Aim precision should not dominate combat. Some crowd control is wanted, but loss of character control should not feel longer than roughly one or two seconds; exact rules remain provisional. Farming should confer a moderate advantage, last hitting must exist in some form, and secondary objectives should allow teams to recover or extend advantages through play. Deadlock-like last hitting is an inspiration to discuss, not an approved mechanical specification.
 
-Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, additional arenas beyond the three and pilot kits beyond the six. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
+Ranked mode is now part of the intended reason to return. Its release timing, matchmaking, rating rules and account requirements remain undecided under D7; do not interpret this as either an approved beta feature or a feature to defer indefinitely. Platform, controller support, first-release scope, art direction, strategic systems and playtest arrangements remain open. The old desktop-browser/private-beta recommendations are proposals, not accepted owner decisions.
+
+**Planning impact, not implementation authorization:** four pilots per crew and a longer match arc require revisiting lane structure, map occupancy, roster/composition rules, farming and upgrade pacing, respawn/travel costs, objective schedules, siege/endgame rules, eight-seat rooms, replay/protocol layouts and eight-human validation. The current five-minute meltdown and seven-minute draw are prototype behavior incompatible with the new target. Do not merely raise the timer or seat count and declare the design fulfilled. Rebaseline milestones after the remaining decisions and the owner's instruction to resume.
 
 ## Lead-designer decision register
 
-**Status · 2026-11-03: recommendations awaiting the owner's decisions.** Adding these questions to the roadmap does not approve the recommendations, grant new spending/publication authority, or require reconfirmation of work already authorized. The owner is lead game designer. Agents own implementation and reversible iteration within the agreed boundaries.
+**Status · 2026-11-03: owner responses recorded beside D1–D8; D1/D2 direction accepted, D3/D4 partially answered, D5–D8 unanswered. Development is paused at the owner’s request pending completion of these decisions.** Adding these questions to the roadmap does not approve the recommendations, grant new spending/publication authority, or require reconfirmation of work already authorized. The owner is lead game designer. Agents own implementation and reversible iteration within the agreed boundaries.
 
 A decision belongs here when it changes the intended player experience, creates expensive downstream commitments, or resolves a value judgment that tests alone cannot settle. A reversible implementation choice belongs with the implementing agent. A question about whether a mechanic actually works or feels good becomes a playtest, not an arbitrary preference poll.
 
@@ -24,9 +26,11 @@ A decision belongs here when it changes the intended player experience, creates 
 
 #### D1 · Who is the primary player, and what should bring them back?
 
+**Owner answer · 2026-11-03 · Approved direction:** Intended players are fans of Brawlhalla, Smash, 2D fighting games, Nickelodeon All-Star Brawl, Awesomenauts and MOBAs such as Deadlock, Smite, Dota and League. Reasons to return: excellent mechanics, a fun new take on the MOBA genre, pickup games with friends, and improving skills through ranked mode. This supersedes the narrower friends-first audience recommendation below. Ranked release timing remains part of D7; “quick pickup” must not be interpreted as permission to replace D2's explicit match duration. **Affected work:** onboarding, combat skill priorities, social flow and competitive progression. **Reopen only:** owner changes the intended experience, or playtest evidence exposes a conflict that needs their judgment.
+
 **Owner choice:** prioritize mixed-experience friend groups learning together, practiced platform-fighter players seeking mechanical mastery, or established MOBA teams seeking deep strategic optimization. All may enjoy the game, but they cannot all determine onboarding and balance priorities equally.
 
-**Recommendation:** make small friend groups the first audience, with easy entry and substantial movement mastery. The promise is “moving feels great, and coordinating around a wave changes the match.” Keep mastery in execution and team decisions rather than requiring extensive item memorization before contributing.
+**Earlier recommendation — superseded by owner audience/return-loop direction:** make small friend groups the first audience, with easy entry and substantial movement mastery. The promise is “moving feels great, and coordinating around a wave changes the match.” Keep mastery in execution and team decisions rather than requiring extensive item memorization before contributing.
 
 **Why this matters:** accessibility is about getting a player into meaningful decisions; depth is about those decisions retaining value with practice. Choosing an audience helps distinguish an appropriately demanding interaction from unnecessary friction. It also determines how to interpret conflicting feedback from beginners and experts.
 
@@ -34,15 +38,19 @@ A decision belongs here when it changes the intended player experience, creates 
 
 #### D2 · What is the match format and desired dramatic arc?
 
-**Owner choice:** confirm 2v2 as the first release's main format, and choose compact repeated skirmishes versus longer matches with a more pronounced farming/late-game arc. This is a product commitment; the current 2v2 implementation alone is not evidence it is the ideal final format.
+**Owner answer · 2026-11-03 · Approved direction:** Main mode is **4v4**. Matches should average **15–20 minutes**; long games can last **30 minutes or more**. Minutes **1–5:** laning. Minutes **6–15:** midgame teamfighting and heavy farming. Minute **15 onward:** endgame. **1v1 and 2v2** are optional practice/alternative modes for beta. This supersedes the proposed 2v2/5–7-minute main format below. No hard 30-minute cap, overtime rule or fixed phase transition has been specified. **Affected work:** map/lane design, progression, farming, objectives, death/return pacing, eight-seat networking and release validation. **Reopen only:** owner changes this target or human matches show a concrete pacing conflict. No implementation starts during the decision pause.
 
-**Recommendation:** retain 2v2, six heroes and three maps for the friends beta; keep 1v1 as practice/optional play. Aim initially for roughly 5–7-minute completed matches with multiple wave decisions and a decisive finish. This is a proposed pacing hypothesis, not an approved target or measured result. The current simulation starts meltdown at five minutes and draws at seven: an eight-minute match target would require changing those rules.
+**Original question — answered above:** choose the main team format and the desired match arc. This is a product commitment; the current 2v2 implementation alone is not evidence it is the ideal final format.
+
+**Earlier recommendation — superseded; do not implement:** retain 2v2, six heroes and three maps for the friends beta; keep 1v1 as practice/optional play. Aim initially for roughly 5–7-minute completed matches with multiple wave decisions and a decisive finish. This is a proposed pacing hypothesis, not an approved target or measured result. The current simulation starts meltdown at five minutes and draws at seven: an eight-minute match target would require changing those rules.
 
 **Why this matters:** adding a third teammate changes map occupancy, team roles, effect density, recovery time and how much one player can influence the result. Longer matches also change the value of farming, upgrades and deaths. They are not simple capacity or timer changes.
 
 **Evidence / timing:** resolve before map/role scope is frozen (W2/W5). Record time to first meaningful fight, objective windows, deaths, travel downtime, match length and whether a won encounter leads to base pressure. Review both crews, early stomps and drawn matches. Adjust the timer only after diagnosing why matches stall or end too abruptly.
 
 #### D3 · What should win a fight, and what must the defender be able to do?
+
+**Owner answer · 2026-11-03 · Provisional guidance; more thought requested:** Aiming should not be too important. Some CC is desirable, but it must not feel overpowering or leave the player unable to control their character for longer than roughly **one or two seconds at most**. The owner explicitly regards this as initial guidance, not a complete combat contract. **Still to resolve:** the intended relative value of movement, combos and team setup; targeting/aim assistance; whether the control-loss limit applies to the entire combined CC chain; and how soft slows, launches and forced movement count. Do not convert the approximate guidance into an invented exact stun cap or choose a CC-protection mechanic without discussion. **Affected work:** targeting, ability interactions, counterplay and input methods.
 
 **Owner choice:** set the priority among aim precision, movement/spacing, ability combinations and team setup. Specify whether long committed combos and extended loss of control fit the intended game. Confirm the accessibility role of assisted keyboard attacks relative to mouse aim.
 
@@ -54,6 +62,8 @@ A decision belongs here when it changes the intended player experience, creates 
 
 #### D4 · How much power should farming buy, and how can a losing crew recover?
 
+**Owner answer · 2026-11-03 · Principles approved; mechanics partly open:** A farm lead should primarily provide a **moderate advantage**. **Last hitting must be present on some level**, potentially inspired by Deadlock's version. Secondary objectives should support comebacks or increased leads according to how teams play and use their advantages. **Still to resolve:** how a 2D last hit is secured/contested, whether denial exists, individual versus nearby/team income, and how objectives reward a trailing team without erasing an earned lead. Deadlock is a reference, not authorization to copy an unspecified current rule. **Affected work:** laning incentives, team roles, income distribution, upgrade pacing and objective rewards. Numerical tuning follows an agreed model and playtests.
+
 **Owner choice:** should a farm lead primarily provide a modest advantage in otherwise contestable fights, or create a large power gap that requires avoiding combat? Should last hitting be a demanding individual resource contest or an execution bonus on top of shared team income?
 
 **Recommendation:** keep team income with meaningful last-hit/pickup bonuses and a small match-local shop. A farm lead should help win the next decision without routinely deciding the entire match. Preserve ways to recover through a punished overcommitment, a contested pickup/objective, or a well-defended push. Avoid automatic equalization that erases successful play. Defer permanent combat-power unlocks.
@@ -64,17 +74,21 @@ A decision belongs here when it changes the intended player experience, creates 
 
 #### D5 · Where should strategic depth come from?
 
+**Owner answer · 2026-11-03 · Open:** “I'll have to think about this one more.” No strategic-depth recommendation below is accepted. Revisit the question for **4v4 and the longer laning/midgame/endgame arc**, rather than treating the old 2v2 assumptions as constraints. **Next discussion:** lane count and rotations, flexible versus required roles, and whether hidden information/fog and scouting belong in the game.
+
 **Owner choice:** prioritize visible wave/objective rotations and flexible pairings, or introduce additional information and composition systems such as fog of war, wards, drafts/bans, hard role requirements and several lanes.
 
 **Recommendation:** get depth from timing, elevation, wave protection, objective commitments and complementary hero choices first. Keep battlefield state observable through the existing camera/minimap model; defer fog/wards and compulsory role or draft systems. Each secondary objective should create an opportunity cost and an opponent response, rather than becoming a mandatory chore every spawn. Preserve the base as the win condition.
 
-**Why this matters:** each additional system consumes attention and teaching time. In a small 2v2 roster, mandatory healer/tank pairings or severe hard counters can remove meaningful selection freedom. We should establish whether existing interactions yield repeatable depth before layering on more systems.
+**Why this matters:** each additional system consumes attention and teaching time. With six heroes, mandatory healer/tank pairings or severe hard counters can remove meaningful selection freedom. We should establish whether existing interactions yield repeatable depth before layering on more systems.
 
 **Evidence / timing:** resolve before new macro systems or selection rules (W2/W5). Watch an escort, a rotation and an opponent punishing that rotation on each arena. Compare several pairings and let testers choose a rematch map. Reopen this decision if competent players repeatedly identify only one viable route, pairing or plan despite focused tuning.
 
 ### Decisions needed at later production gates
 
 #### D6 · What artistic identity and tone should the game commit to?
+
+**Owner answer · 2026-11-03 · Open:** The owner needs more time to consider artistic identity. Brightwork remains an unapproved proposal; current art stays in place. No style or asset-production decision has been made. Discuss the proposal and desired tone before requesting an approval.
 
 **Owner choice:** approve, edit or reject the [Brightwork art proposal](art-direction.md), including its tone and the relationship between hero fantasy, silhouettes, environments and sound.
 
@@ -83,6 +97,8 @@ A decision belongs here when it changes the intended player experience, creates 
 **Evidence / timing:** required before commissioning or producing the full art set, not before mechanics iteration. Evaluate normal-speed crowded combat at actual play size, not only attractive stills. Record approval/edits in the art document, linked here. Style approval does not authorize spending by itself.
 
 #### D7 · What is the first release, and what level of finish earns its name?
+
+**Owner answer · 2026-11-03 · Open:** The owner needs more time to consider the first release and its quality/platform boundary. Ranked is part of D1's intended return loop, but **whether ranked ships in beta is unanswered**. The browser-only/private-beta recommendation below is not accepted. Discuss platform/input support, private versus public availability and ranked timing together, since these alter production scope.
 
 **Owner choice:** distinguish an invite-only friends beta from a publicly discoverable early-access product or a full commercial release. Confirm the first supported platform/input contract and what remains explicitly out of scope.
 
@@ -94,9 +110,11 @@ A decision belongs here when it changes the intended player experience, creates 
 
 #### D8 · What evidence can change the design, and who supplies it?
 
+**Owner answer · 2026-11-03 · Open:** The owner needs more time to consider playtesting and decision evidence. No recruitment commitment, cadence, participant count or new gate has been approved. The 4v4 main mode will require eight-human sessions to validate full-team play; this is a planning need, not a claim that testers are available. Existing solo feedback remains useful but does not settle multiplayer fun or balance.
+
 **Owner choice:** confirm a playtest cadence, arrange access to participants, and identify which failures should cause a redesign, scope cut or delayed release. Specify the owner's role in judging the desired feel when evidence supports several viable options.
 
-**Recommendation:** short four-person sessions after meaningful gameplay changes, with crews and roles swapped; use the existing six-fresh-player discovery and beta gates before expanding invitations. Agents prepare builds, scripts and anonymous summaries, then act on bounded findings. The owner chooses among competing experiential goals and helps secure participant availability; invitations/messages require their existing authorization. No extra numeric threshold in this register is an approved acceptance gate until adopted.
+**Recommendation requiring revision for 4v4:** full eight-person main-mode sessions, with smaller sessions for focused mechanics, after meaningful gameplay changes, with crews and roles swapped; use the existing six-fresh-player discovery and beta gates before expanding invitations. Agents prepare builds, scripts and anonymous summaries, then act on bounded findings. The owner chooses among competing experiential goals and helps secure participant availability; invitations/messages require their existing authorization. No extra numeric threshold in this register is an approved acceptance gate until adopted.
 
 **Why this matters:** automated tests establish execution and consistency. They cannot establish enjoyment, teachability, perceived fairness or willingness to replay. The owner has reported that the game works reasonably well after solo play; that is valuable early feedback, not a completed multiplayer fun gate. Neither one enthusiastic report nor a small win-rate sample is a reliable basis for broad balance claims.
 
@@ -106,17 +124,17 @@ A decision belongs here when it changes the intended player experience, creates 
 
 | ID / owner | Decision needed and recommendation | When it blocks work |
 | --- | --- | --- |
-| O1 · owner / producer | Approve an actual monthly spending cap, hosting region/cohort size and purchasing permissions. The existing $30/month figure is an unapproved planning estimate, not a current hosting quote or spending authorization. Agent may research options; purchases require applicable authorization. | Before paid hosting, asset purchases or external subscriptions. Local gameplay work continues. |
-| O2 · owner / release host | Define deployment and publication authority: local builds, staging, invite endpoint and public release separately. Recommend autonomous reversible implementation/testing within agreed scope, with an owner go/no-go for the first public release. Existing authorized repo pushes and local work do not need reconfirmation. Confirm who monitors a live session and can roll back. | Before an action outside current authorization. Preparing a concrete candidate and runbook continues. |
+| O1 · owner / producer | Approve an actual monthly spending cap, hosting region/cohort size and purchasing permissions. The existing $30/month figure is an unapproved planning estimate, not a current hosting quote or spending authorization. Agent may research options; purchases require applicable authorization. | Before paid hosting, asset purchases or external subscriptions. Decision/documentation work continues; gameplay implementation is currently paused. |
+| O2 · owner / release host | Define deployment and publication authority: local builds, staging, invite endpoint and public release separately. Recommend autonomous reversible implementation/testing within agreed scope, with an owner go/no-go for the first public release. Existing authorized repo pushes and local work do not need reconfirmation. Confirm who monitors a live session and can roll back. | Before an action outside current authorization. Candidate preparation resumes after the current design-decision pause. |
 | O3 · owner / producer | Decide when commercial direction needs commitment: free private beta first is recommended; pricing and any later cosmetic business model remain undecided. Do not introduce monetized combat power. Confirm telemetry purpose, what leaves the player's machine and retention before enabling remote collection. | Before store work, payments, account architecture driven by monetization, or new data collection. No need to build these for the private prototype. |
 
 ### How decisions become an autonomous work contract
 
-**Smallest useful initial answer:** D1 audience, D2 format/pacing, D3 combat priorities, D4 farming/advantage philosophy, D5 strategic complexity, D7 release/platform boundary and D8 playtest access. These can be approved together or edited selectively. D6 waits until art production; O1–O3 wait until the relevant external commitment. Unanswered questions do not stop independent work already authorized and do not count as accepted recommendations.
+**Smallest useful initial answer:** D1 audience, D2 format/pacing, D3 combat priorities, D4 farming/advantage philosophy, D5 strategic complexity, D7 release/platform boundary and D8 playtest access. These can be approved together or edited selectively. Earlier sequencing placed D6 at art production; the owner now wants the key design questions worked through before game development resumes. O1–O3 remain separate operational decisions. **Owner override:** game development is paused until the key decisions are fully worked through. Continue discussion and documentation only; do not use prior autonomous-development authorization to bypass this pause. Unanswered recommendations are not approvals.
 
 For each resolved ID, record: **status (proposed / approved / testing / superseded), date, owner's actual decision, rationale, affected milestone, delegated scope, evidence link and condition for reopening**. Keep the recommendation distinct from the recorded decision. An agent can mark evidence collected or implementation complete; it cannot turn an unanswered owner choice into approval. A test result can challenge an assumption without silently replacing the owner's priority.
 
-Within accepted boundaries, agents own bug fixes, implementation architecture, appropriate tests, documentation, reversible balance experiments, ordinary bot behavior, platform coordinates and numeric tuning. Escalate when evidence implies changing a core pillar, approved scope, spending/publication limits or an irreversible production commitment. Present a concrete recommendation with alternatives and evidence; do not ask the owner to settle every value or routine refactor.
+**Once the owner resumes development**, within accepted boundaries agents own bug fixes, implementation architecture, appropriate tests, documentation, reversible balance experiments, ordinary bot behavior, platform coordinates and numeric tuning. Escalate when evidence implies changing a core pillar, approved scope, spending/publication limits or an irreversible production commitment. Present a concrete recommendation with alternatives and evidence; do not ask the owner to settle every value or routine refactor.
 
 **Dependency order:** intended audience and release boundary → match/combat/economy/strategy contract → targeted multiplayer playtests and tuning → approved art slice and remaining usability work → internet/reliability validation → candidate review and authorized release. The original week labels below are milestone references, not evidence these decisions or gates have passed.
 
@@ -124,7 +142,9 @@ Within accepted boundaries, agents own bug fixes, implementation architecture, a
 
 The register's recommendations are design hypotheses for Rivet Rush, not findings about its players. Two primary developer accounts support the evaluation principles: [Riot's counterplay discussion](https://www.leagueoflegends.com/en-gb/news/dev/quick-gameplay-thoughts-may-14/) distinguishes immediate and strategic answers to threats; [Riot's clarity principles](https://www.leagueoflegends.com/en-us/news/dev/clarity-in-league/) prioritize recognizable gameplay information, consequential threats and limited visual noise. Neither establishes the correct match length, audience, economy or commercial model for this game. Those require the owner's intent and the [playtest process](playtesting.md).
 
-## Capacity and schedule
+## Capacity and schedule — legacy proposal awaiting 4v4 rebaseline
+
+**Superseded planning assumptions:** the schedule, engineering contract, candidate matrix and release-night procedures below describe the earlier four-seat/short-match beta proposal. They remain a reference for reusable checks, not the approved target. Eight-seat main-mode capacity, 15–20-minute average/30-minute-plus pacing, ranked release timing and first-release scope must be reconciled after D3–D8. No old four-client check or seven-minute timeout can demonstrate the new 4v4 target. The historical gate ledger still describes evidence from the actual prototype.
 
 The original eight-week plan below is a proposed sequence, not an active delivery promise. Re-estimate remaining work after D1–D5, D7 and D8 are resolved; many implementation pieces already exist while human and internet gates remain open. Budget **24 engineering hours, 6 design/playtest hours and 4 QA/operations hours each week** (272 hours total). Roles can overlap. The lead engineer owns the build, the playtest lead owns recruitment and observations, and the release host owns staging, incident response and the go/no-go decision. Name people against those roles at kickoff. Recruit six first-time players for discovery and a separate six for beta validation, with four available simultaneously for two evening sessions. Arrange dates in week one.
 
