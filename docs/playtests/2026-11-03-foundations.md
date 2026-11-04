@@ -33,6 +33,34 @@ During implementation, compressing the public state reduced a representative 2v2
 
 The local Node suite passed 29 rules, movement, replay and socket checks. Five browser scenarios passed in installed Edge 156, Chrome 156 and Playwright Firefox 157 on Windows. Those scenarios cover deployment, the complete move drill, the traversal course, replay viewing and a four-seat reconnect. The Windows exercise does not cover macOS or a public hosting provider. Docker was unavailable on the test machine; the Node host was exercised directly.
 
+## Published candidate
+
+Game revision `2946493` passed [GitHub's Linux CI run](https://github.com/SeanFrankel/rivet-rush/actions/runs/41743492728). Its clean archive served the entire game after installing production dependencies only. The four-browser release run finished at tick 7,460. Torch won with 6 pilot KOs against Cinder's 13 by destroying the reactor. Both Torch pilots farmed and reached rig level six. All clients agreed, and the same room started a clean rematch. The exported [match replay](../../tests/fixtures/kiln-02.4-2v2.json) reproduces signature `4006c11c` in a clean checkout. These were scripted crews with different objectives, so the result says nothing about human balance.
+
+Run `node tools/replay.cjs tests/fixtures/kiln-02.4-2v2.json` or select this file in **Watch replay** to inspect the match. A separate regression preserves this recording across refactors. When intentionally changing rules, retain the old fixture with its source revision and establish a new candidate record.
+
+## Endurance and final direction-change measurements
+
+All load runs used loopback WebSockets on this Windows machine. Each used four rooms, four connected clients per room, and deliberately lopsided input policies to exercise endings and rematches. Four games were still active at each cutoff. The runs sampled successive implementations during development.
+
+| Implementation exercised | Wall time | Completed matches | Unexpected disconnects / rejected actions | Server catch-up budget overruns |
+| --- | ---: | ---: | ---: | ---: |
+| Initial authoritative server | 60 min | 992 | 0 | 1 |
+| Compact snapshot iteration | 47 min | 780 | 0 | 1 |
+| MOBA kits, farming and objectives iteration | 35 min | 476 | 0 | 0 |
+| Movement build with server timing instrumentation | 15 min | 224 | 0 | 0 |
+
+In the 15-minute run, server update work across four rooms was 2.849 ms at p95 and 5.239 ms at p99. Host and synthetic clients shared a Node process. RSS rose from 65.2 MiB at the first minute to 84 MiB by the end. The separate-host two-hour memory and cleanup gate remains open.
+
+The repeat ten-minute browser drill used the same direction-change procedure after the countersteer fix. Input-to-motion measures elapsed time from the keyboard event to the first displayed world displacement greater than one pixel in the requested direction. The drill includes fights, ordinary steering and action recovery.
+
+| Relay profile | Measured inputs | Input-to-motion p95 | Corrections sampled | Position correction p95 | Frame time p95 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 40 ms round trip | 470 | 18.1 ms | 6,279 | 3.42 px | 8.5 ms |
+| 150 ms round trip, jitter and ordered stalls | 496 | 31.9 ms | 6,512 | 10.25 px | 8.5 ms |
+
+Both runs completed without browser errors or a measured turn timing out at 400 ms. This verifies input response under the tested conditions. Player preference for the amount of momentum, real home-network behavior and human matchup balance still require playtests.
+
 ## Next human session
 
 Let each tester choose a kit and make a first lap without coaching. Record which input they intended when they miss a platform. Then put a duo in a match and watch its first farm purchase, first contested objective and first attack on a reactor. Ask the opposing crew what response it saw. Offer a real choice to stop or rematch. Use the [session record](session-template.md) and measure the [human gates](../playtesting.md). Internet staging, human balance, macOS coverage and an independent rollback rehearsal remain outstanding.
