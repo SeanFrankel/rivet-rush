@@ -1,134 +1,1283 @@
 "use strict";
-const canvas=document.querySelector("canvas"), ctx=canvas.getContext("2d");
-const el=id=>document.getElementById(id);
-const palette=["#64e4ce","#ff8864"], dark=["#285b62","#784452"];
-let match=Yard.create(), mode="ready", camera=0, last=0, debt=0;
-const held=new Set(),pressed=new Set();
-function box(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
-function line(x,y,a,b,color,w=2){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(a,b);ctx.stroke();}
-function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,2*Math.PI);ctx.fill();}
-function poly(points,color){ctx.fillStyle=color;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();}
-function label(t,x,y,color="#e6e3d8",size=10){ctx.fillStyle=color;ctx.font="bold "+size+"px monospace";ctx.fillText(t,x,y);}
+const canvas = document.querySelector("canvas"),
+  ctx = canvas.getContext("2d");
+const el = (id) => document.getElementById(id);
+const palette = ["#64e4ce", "#ff8864", "#ffcd69"],
+  dark = ["#285b62", "#784452", "#795933"];
+let match = Yard.create({ teamSize: 2 }),
+  mode = "ready",
+  camera = 0,
+  last = 0,
+  debt = 0,
+  teamSize = 2;
+const held = new Set(),
+  pressed = new Set();
+const mouse = { x: 0, y: 0, fire: false };
+const sounds = new YardSound();
+const yardArt = new Image();
+yardArt.src = "assets/kiln-yard.jpg";
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let lesson = 0,
+  localKind = "skirmish",
+  uiKey = "",
+  inviteCode = "",
+  selectedKit = "runner";
+let recording = null;
+let playback = null,
+  replaySpeed = 1;
+const gates = [
+  [416, 275],
+  [690, 208],
+  [890, 149],
+  [1090, 208],
+  [1364, 275],
+  [1605, 345],
+];
+let trial = null;
+function box(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+}
+function line(x, y, a, b, color, w = 2) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = w;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(a, b);
+  ctx.stroke();
+}
+function circle(x, y, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fill();
+}
+function poly(points, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  points.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  ctx.closePath();
+  ctx.fill();
+}
+function label(t, x, y, color = "#e6e3d8", size = 10) {
+  ctx.fillStyle = color;
+  ctx.font = "bold " + size + "px monospace";
+  ctx.fillText(t, x, y);
+}
 // Integer-seed adaptation of d3-random's randomLcg. See THIRD_PARTY.md.
-let seed=219;
-function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
-const towers=Array.from({length:70},(_,i)=>({x:i*38,w:16+random()*52,h:20+random()*100}));
-const stars=Array.from({length:120},()=>[random()*1200,random()*190,1+random()*1.4]);
-function backdrop(){
-  const sky=ctx.createLinearGradient(0,0,0,350);sky.addColorStop(0,"#17263e");sky.addColorStop(.65,"#595570");sky.addColorStop(1,"#cb876d");box(0,0,960,440,sky);
-  for(const [x,y,r] of stars)box(x-camera*.08,y,r,r,"#cab4ad");
-  const sx=714-camera*.09;circle(sx,104,56,"#eab27e");
-  for(let i=0;i<4;i++)box(sx-58,128+i*6,118,2+i,"#6f6174");
-  for(let i=0;i<2;i++){
-    const offset=camera*(.13+i*.12);
-    for(const t of towers){const x=t.x-offset;if(x+t.w<0||x>960)continue;
-      const bottom=277+i*39,y=bottom-t.h*(.63+i*.27);
-      box(x,y,t.w,bottom-y,i?"#354052":"#55556b");
-      line(x+4,y,x+4,y-13,"#4d4d63");box(x+6,y+7,7,2,"#987872");
+let seed = 219;
+function random() {
+  seed = (1664525 * seed + 1013904223) >>> 0;
+  return seed / 4294967296;
+}
+const towers = Array.from({ length: 70 }, (_, i) => ({
+  x: i * 38,
+  w: 16 + random() * 52,
+  h: 20 + random() * 100,
+}));
+const stars = Array.from({ length: 120 }, () => [
+  random() * 1200,
+  random() * 190,
+  1 + random() * 1.4,
+]);
+function backdrop() {
+  if (yardArt.complete && yardArt.naturalWidth) {
+    ctx.drawImage(yardArt, -camera * 0.21, 0, 1160, 365);
+    return;
+  }
+  const sky = ctx.createLinearGradient(0, 0, 0, 350);
+  sky.addColorStop(0, "#17263e");
+  sky.addColorStop(0.65, "#595570");
+  sky.addColorStop(1, "#cb876d");
+  box(0, 0, 960, 440, sky);
+  for (const [x, y, r] of stars) box(x - camera * 0.08, y, r, r, "#cab4ad");
+  const sx = 714 - camera * 0.09;
+  circle(sx, 104, 56, "#eab27e");
+  for (let i = 0; i < 4; i++) box(sx - 58, 128 + i * 6, 118, 2 + i, "#6f6174");
+  for (let i = 0; i < 2; i++) {
+    const offset = camera * (0.13 + i * 0.12);
+    for (const t of towers) {
+      const x = t.x - offset;
+      if (x + t.w < 0 || x > 960) continue;
+      const bottom = 277 + i * 39,
+        y = bottom - t.h * (0.63 + i * 0.27);
+      box(x, y, t.w, bottom - y, i ? "#354052" : "#55556b");
+      line(x + 4, y, x + 4, y - 13, "#4d4d63");
+      box(x + 6, y + 7, 7, 2, "#987872");
     }
   }
-  for(let i=0;i<5;i++){
-    const x=i*430-camera*.43-80;
-    line(x,305,x+35,116,"#31394b",8);line(x+68,305,x+35,116,"#31394b",7);
-    line(x-33,149,x+167,86,"#31394b",8);line(x+35,116,x+61,68,"#31394b",4);
-    line(x+61,68,x+167,86,"#31394b",2);line(x+158,91,x+158,161,"#404151",2);
-    box(x+151,162,15,5,"#454455");
+  for (let i = 0; i < 5; i++) {
+    const x = i * 430 - camera * 0.43 - 80;
+    line(x, 305, x + 35, 116, "#31394b", 8);
+    line(x + 68, 305, x + 35, 116, "#31394b", 7);
+    line(x - 33, 149, x + 167, 86, "#31394b", 8);
+    line(x + 35, 116, x + 61, 68, "#31394b", 4);
+    line(x + 61, 68, x + 167, 86, "#31394b", 2);
+    line(x + 158, 91, x + 158, 161, "#404151", 2);
+    box(x + 151, 162, 15, 5, "#454455");
   }
 }
-function deck(x,y,w,ground=false){
-  box(x,y,w,ground?100:15,"#192a36");box(x,y,w,5,"#95939a");
-  box(x,y+5,w,3,"#4b6170");
-  for(let i=0;i<w;i+=42){
-    box(x+i+3,y+1,13,3,"#d4ab6b");
-    if(ground){line(x+i,y+14,x+i+35,y+51,"#30434e",5);box(x+i,y+55,35,5,"#334954");}
+function deck(x, y, w, ground = false) {
+  box(x, y, w, ground ? 100 : 15, "#192a36");
+  box(x, y, w, 5, "#95939a");
+  box(x, y + 5, w, 3, "#4b6170");
+  for (let i = 0; i < w; i += 42) {
+    box(x + i + 3, y + 1, 13, 3, "#d4ab6b");
+    if (ground) {
+      line(x + i, y + 14, x + i + 35, y + 51, "#30434e", 5);
+      box(x + i, y + 55, 35, 5, "#334954");
+    }
   }
 }
-function drawUnit(u){
-  if(!u.hp)return;
-  const c=u.flash>0?"#fff4cd":palette[u.team],d=dark[u.team];
-  ctx.save();ctx.translate(Math.round(u.x),Math.round(u.y));ctx.scale(u.dir,1);
-  if(u.kind==="pilot"){
-    const stride=Math.sin(match.time*12+u.x*.05)*3;
-    box(-11,-28,9,20,"#1a2532");box(-10,-24,6,8,c);
-    box(-7,-12,6,11+stride*.3,"#29384b");box(2,-12,7,11-stride*.3,"#29384b");
-    poly([[-8,-27],[5,-29],[10,-24],[6,-11],[-5,-11]],d);
-    box(-6,-36,15,11,"#eac39c");box(-8,-36,16,4,c);box(1,-32,10,4,"#213342");
-    box(-2,-24,10,5,c);box(5,-21,17,6,"#b4b6b1");box(17,-21,6,3,c);
-  }else if(u.kind==="crawler"){
-    box(-14,-8,29,8,"#15242c");for(const x of [-9,0,9])circle(x,-4,3,"#6d7780");
-    poly([[-14,-8],[-9,-18],[5,-18],[14,-10],[12,-6]],d);
-    box(-6,-16,13,4,c);box(7,-13,13,3,"#d7c9ae");
-  }else if(u.kind==="sentry"){
-    if(u.aim){
-      const dx=(u.aim.x-u.x)*u.dir,dy=u.aim.y-(u.y-Yard.height(u)/2);
-      const length=Math.hypot(dx,dy)||1;
-      ctx.save();ctx.setLineDash([6,6]);
-      line(0,-24,dx/length*(u.range+24),-24+dy/length*(u.range+24),"#ffe2aa",2);
+function drawUnit(u) {
+  if (!u.hp) return;
+  const c = u.flash > 0 ? "#fff4cd" : palette[u.team],
+    d = dark[u.team];
+  ctx.save();
+  ctx.translate(Math.round(u.x), Math.round(u.y));
+  ctx.scale(u.dir, 1);
+  if (u.kind === "pilot") {
+    const stride = u.moving && u.grounded ? Math.sin(match.time * 18) * 4 : 0;
+    const boost = u.dashLeft > 0,
+      air = !u.grounded;
+    if (u.slideLeft > 0) ctx.scale(1.13, 0.69);
+    if (boost) {
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = 0.26 - i * 0.06;
+        poly(
+          [
+            [-8 - i * 11, -29],
+            [-39 - i * 11, -24],
+            [-15 - i * 11, -18],
+          ],
+          c,
+        );
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.rotate(boost ? 0.19 : u.slamming ? -0.12 : 0);
+    // Rear boot and front boot separate in the air so jumps read at a glance.
+    poly(
+      [
+        [-8, -16],
+        [-1, -15],
+        [-4 - stride, -5],
+        [-9 - stride, air ? -7 : -2],
+        [-13 - stride, air ? -10 : -2],
+      ],
+      "#263547",
+    );
+    poly(
+      [
+        [2, -16],
+        [9, -14],
+        [7 + stride, air ? -9 : -4],
+        [12 + stride, air ? -7 : -3],
+        [11 + stride, air ? -5 : 0],
+        [1 + stride, air ? -7 : 0],
+      ],
+      "#b9afa4",
+    );
+    poly(
+      [
+        [-12, -30],
+        [-5, -32],
+        [-5, -12],
+        [-13, -13],
+        [-16, -19],
+      ],
+      "#203142",
+    );
+    box(-14, -27, 6, 9, "#bb875b");
+    if (air || boost)
+      poly(
+        [
+          [-14, -17],
+          [-9, -17],
+          [boost ? -30 : -11, boost ? -14 : -5],
+        ],
+        "#ffc67e",
+      );
+    poly(
+      [
+        [-9, -29],
+        [4, -30],
+        [12, -24],
+        [8, -12],
+        [-4, -11],
+        [-10, -18],
+      ],
+      d,
+    );
+    poly(
+      [
+        [-8, -28],
+        [4, -30],
+        [9, -25],
+        [4, -22],
+        [-7, -23],
+      ],
+      c,
+    );
+    box(-5, -18, 13, 3, "#aeb0a2");
+    // Swept helmet, cream faceplate, bright eye slit and copper scarf.
+    poly(
+      [
+        [-9, -35],
+        [-4, -41],
+        [6, -40],
+        [12, -34],
+        [8, -27],
+        [-6, -27],
+      ],
+      "#202e3b",
+    );
+    poly(
+      [
+        [-8, -35],
+        [-3, -39],
+        [6, -38],
+        [10, -34],
+        [3, -32],
+        [-8, -32],
+      ],
+      "#d4c1a0",
+    );
+    box(0, -34, 11, 3, c);
+    box(4, -30, 4, 2, "#e6dfca");
+    poly(
+      [
+        [-5, -28],
+        [-11, -30],
+        [-17, -28],
+        [-24, -31],
+        [-18, -24],
+        [-8, -25],
+      ],
+      "#d5955f",
+    );
+    const recoil = u.cd > u.rate - 0.07 ? -3 : 0;
+    poly(
+      [
+        [3, -25],
+        [10, -23],
+        [13, -19],
+        [6, -17],
+        [0, -21],
+      ],
+      c,
+    );
+    box(8 + recoil, -23, 15, 7, "#39434b");
+    box(12 + recoil, -24, 12, 3, "#c6b79d");
+    box(20 + recoil, -23, 6, 5, c);
+    if (u.kit === "warden") {
+      poly(
+        [
+          [-14, -29],
+          [-6, -36],
+          [4, -34],
+          [8, -27],
+          [0, -19],
+          [-13, -22],
+        ],
+        "#374959",
+      );
+      poly(
+        [
+          [-12, -28],
+          [-6, -33],
+          [2, -31],
+          [3, -27],
+          [-4, -23],
+        ],
+        c,
+      );
+      box(7, -24, 16, 9, "#c5946b");
+      box(17, -25, 10, 10, d);
+      box(24, -24, 4, 8, c);
+    }
+    if (recoil)
+      poly(
+        [
+          [25, -24],
+          [35, -21],
+          [25, -19],
+        ],
+        "#ffdb8b",
+      );
+  } else if (u.kind === "keeper") {
+    if (u.charge > 0) {
+      ctx.save();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffce73";
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.arc(0, -20, u.range, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
-      circle(0,-48,4,"#fff1c9");
     }
-    poly([[-24,0],[-13,-13],[-9,-43],[10,-43],[14,-13],[23,0]],"#344552");
-    box(-13,-46,23,17,d);box(-8,-43,16,4,c);box(4,-36,26,8,"#bbc1bc");
-    box(-13,-14,25,5,c);
-  }else{
-    box(-29,-9,58,9,"#1c2d38");poly([[-22,-9],[-18,-66],[-8,-78],[12,-78],[23,-64],[23,-9]],"#243745");
-    box(-16,-64,33,51,d);for(let y=-59;y<-20;y+=9)box(-10,y,20,5,c);
-    box(-21,-67,42,6,"#a5b1ad");box(-21,-15,42,5,"#879598");
+    poly(
+      [
+        [-18, -16],
+        [-13, -33],
+        [0, -44],
+        [14, -32],
+        [19, -15],
+        [8, -5],
+        [-9, -5],
+      ],
+      "#4a4042",
+    );
+    poly(
+      [
+        [-13, -22],
+        [0, -36],
+        [13, -22],
+        [0, -9],
+      ],
+      "#9b7343",
+    );
+    poly(
+      [
+        [-7, -22],
+        [0, -29],
+        [7, -22],
+        [0, -15],
+      ],
+      u.charge > 0 ? "#fff4c9" : c,
+    );
+    box(-22, -8, 43, 8, "#394b52");
+  } else if (u.kind === "breaker") {
+    box(-21, -9, 43, 9, "#15242c");
+    for (const x of [-14, -4, 6, 15]) circle(x, -5, 4, "#84949b");
+    poly(
+      [
+        [-21, -9],
+        [-15, -24],
+        [0, -29],
+        [14, -26],
+        [22, -13],
+        [16, -8],
+      ],
+      d,
+    );
+    box(-12, -24, 19, 4, c);
+    box(3, -21, 24, 6, "#d0bc9f");
+    box(18, -22, 8, 8, c);
+    line(-9, -19, -4, -14, "#f9ce7b", 2);
+    line(-4, -19, 1, -14, "#f9ce7b", 2);
+  } else if (u.kind === "crawler") {
+    box(-14, -8, 29, 8, "#15242c");
+    for (const x of [-9, 0, 9]) circle(x, -4, 3, "#6d7780");
+    poly(
+      [
+        [-14, -8],
+        [-9, -18],
+        [5, -18],
+        [14, -10],
+        [12, -6],
+      ],
+      d,
+    );
+    box(-6, -16, 13, 4, c);
+    box(7, -13, 13, 3, "#d7c9ae");
+  } else if (u.kind === "sentry") {
+    if (u.aim) {
+      const dx = (u.aim.x - u.x) * u.dir,
+        dy = u.aim.y - (u.y - Yard.height(u) / 2);
+      const length = Math.hypot(dx, dy) || 1;
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      line(
+        0,
+        -24,
+        (dx / length) * (u.range + 24),
+        -24 + (dy / length) * (u.range + 24),
+        "#ffe2aa",
+        2,
+      );
+      ctx.restore();
+      circle(0, -48, 4, "#fff1c9");
+    }
+    poly(
+      [
+        [-24, 0],
+        [-13, -13],
+        [-9, -43],
+        [10, -43],
+        [14, -13],
+        [23, 0],
+      ],
+      "#344552",
+    );
+    box(-13, -46, 23, 17, d);
+    box(-8, -43, 16, 4, c);
+    box(4, -36, 26, 8, "#bbc1bc");
+    box(-13, -14, 25, 5, c);
+  } else {
+    box(-29, -9, 58, 9, "#1c2d38");
+    poly(
+      [
+        [-22, -9],
+        [-18, -66],
+        [-8, -78],
+        [12, -78],
+        [23, -64],
+        [23, -9],
+      ],
+      "#243745",
+    );
+    box(-16, -64, 33, 51, d);
+    for (let y = -59; y < -20; y += 9) box(-10, y, 20, 5, c);
+    box(-21, -67, 42, 6, "#a5b1ad");
+    box(-21, -15, 42, 5, "#879598");
+    if (u.shielded) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([9, 6]);
+      ctx.beginPath();
+      ctx.ellipse(0, -32, 33, 50, 0, Math.PI, Math.PI * 2);
+      ctx.stroke();
+    }
   }
   ctx.restore();
-  const y=u.y-Yard.height(u)-12, w=u.kind==="reactor"?52:28;
-  box(u.x-w/2,y,w,3,"#172b37");box(u.x-w/2,y,w*u.hp/u.max,3,c);
-  if(u===match.player)label("YOU",u.x-9,y-4,c,9);
-}
-function draw(){
-  camera=Math.max(0,Math.min(Yard.width-960,match.player.x-425));
-  backdrop();ctx.save();ctx.translate(-camera,0);
-  deck(0,Yard.floor,Yard.width,true);
-  for(const [a,b,y] of Yard.platforms(match))deck(a,y,b-a);
-  box(710,178,9,30,"#253a47");box(704,173,23,13,"#eebb68");label("E",712,183,"#19252d");
-  label(match.bridge>0?"CROSSING OPEN":"CRANE 07",670,157,"#ffe1ac");
-  label("KILN  //  07",805,403,"#667780",21);
-  for(const u of match.units)drawUnit(u);
-  for(const s of match.shots)line(s.x,s.y,s.x-s.vx*.017,s.y-s.vy*.017,palette[s.team],3);
-  for(const f of match.fx){ctx.globalAlpha=f.life/.36;ctx.strokeStyle="#ffce81";ctx.lineWidth=4;ctx.beginPath();ctx.arc(f.x,f.y,(1-f.life/.36)*f.size+2,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=1;
-  ctx.restore();
-  const cores=match.units.filter(u=>u.kind==="reactor");
-  for(const core of cores){
-    const x=core.team?752:16;box(x,14,192,36,"#162735");label(core.team?"CINDER REACTOR":"TORCH REACTOR",x+8,29,palette[core.team]);box(x+8,35,176,5,dark[core.team]);box(x+8,35,176*core.hp/core.max,5,palette[core.team]);
+  if (u.barrier > 0 || u.spawnGuard > 0) {
+    ctx.save();
+    ctx.strokeStyle = "#b6ffeb";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.ellipse(u.x, u.y - Yard.height(u) / 2, 19, Yard.height(u) / 2 + 5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
-  box(353,15,254,23,"#172935");label("YARD",362,30);line(398,26,594,26,"#70828a");
-  for(const u of match.units)if(u.hp>0)box(398+u.x/Yard.width*196,23,u===match.player?5:3,u.kind==="crawler"?4:7,palette[u.team]);
-  el("pilot").textContent="HP "+Math.ceil(match.player.hp)+" / 135   ·   SCRAP "+match.scrap+"   ·   GUN "+(match.rank+1);
-  el("status").textContent="WAVE "+match.wave+"   /   PULSE "+(match.pulse>0?Math.ceil(match.pulse)+"s":"READY");
-  if(match.notice>0||match.player.hp===0){box(295,365,370,30,"#172935");ctx.textAlign="center";label(match.player.hp===0?"REDEPLOY IN "+Math.ceil(match.player.respawn):match.note,480,385,"#ffd696",14);ctx.textAlign="left";}
+  const y = u.y - Yard.height(u) - 12,
+    w = u.kind === "reactor" ? 52 : 28;
+  box(u.x - w / 2, y, w, 3, "#172b37");
+  box(u.x - w / 2, y, (w * u.hp) / u.max, 3, c);
+  if (u.kind === "breaker")
+    label(
+      u.mortarCharge > 0 ? "SIEGE SHOT  " + u.mortarCharge.toFixed(1) : "BREAKER",
+      u.x - 21,
+      y - 4,
+      c,
+      9,
+    );
+  if (u.kind === "keeper")
+    label(u.charge > 0 ? "DISCHARGE" : "VAULT KEEPER", u.x - 31, y - 6, c, 9);
+  if (u.repairing) label("+", u.x + 13, y - 4, "#8ff5c2", 15);
+  if (u.kind === "pilot") {
+    const tag =
+      u === match.player
+        ? "YOU"
+        : match.training
+          ? "TARGET"
+          : u.team === match.player.team
+            ? "ALLY"
+            : "RIVAL";
+    label(tag, u.x - 10, y - 5, c, 9);
+  }
 }
-function overlay(state,title,brief,button){
-  mode=state;held.clear();pressed.clear();el("headline").textContent=title;el("brief").textContent=brief;
-  el("start").textContent=button;el("panel").hidden=false;el("start").focus();
+
+function drawEffect(f) {
+  const t = 1 - f.life / f.duration,
+    color = palette[f.team],
+    radius = Math.max(1, f.size * t);
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.globalAlpha = Math.min(1, (1 - t) * 1.7);
+  if (f.kind === "dash" || f.kind === "lunge") {
+    ctx.scale(f.dir, 1);
+    for (let i = 0; i < 4; i++)
+      line(-15 - t * 20, -10 + i * 6, 22 - t * 45, -12 + i * 6, i % 2 ? color : "#ffe1ad", 2);
+  } else if (f.kind === "kick") {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 1, radius, 3 + t * 2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (f.kind === "prime") {
+    line(-16 + t * 9, 0, 0, 12, color, 3);
+    line(16 - t * 9, 0, 0, 12, color, 3);
+  } else {
+    ctx.strokeStyle = f.kind === "burst" ? "#ffb270" : color;
+    ctx.lineWidth = f.kind === "slam" ? 5 : 3;
+    ctx.beginPath();
+    ctx.ellipse(
+      0,
+      0,
+      radius,
+      Math.max(1, radius * (f.kind === "slam" ? 0.46 : 1)),
+      0,
+      f.kind === "slam" ? Math.PI : 0,
+      Math.PI * 2,
+    );
+    ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const angle = f.kind === "slam" ? Math.PI + (i * Math.PI) / 7 : (i * Math.PI) / 4 + f.id;
+      const r = radius * (0.8 + (i % 3) * 0.1),
+        tail = Math.max(0, r - 9);
+      line(
+        Math.cos(angle) * tail,
+        Math.sin(angle) * tail,
+        Math.cos(angle) * r,
+        Math.sin(angle) * r,
+        i % 2 ? color : "#ffdf9a",
+        2,
+      );
+    }
+  }
+  ctx.restore();
 }
-function pause(){if(mode==="play")overlay("pause","Shift paused","The yard is holding position.","RESUME MATCH →");}
-function launch(){
-  if(mode!=="pause")match=Yard.create();
-  mode="play";debt=0;last=0;el("panel").hidden=true;
+function worldHUD() {
+  for (const core of match.units.filter((u) => u.kind === "reactor")) {
+    const x = core.team ? 752 : 16;
+    box(x, 14, 192, 36, "#162735");
+    label(
+      (core.team ? "CINDER" : "TORCH") + (core.shielded ? " · SHIELDED" : " · EXPOSED"),
+      x + 8,
+      29,
+      palette[core.team],
+    );
+    box(x + 8, 35, 176, 5, dark[core.team]);
+    box(x + 8, 35, (176 * core.hp) / core.max, 5, palette[core.team]);
+  }
+  box(348, 14, 264, 34, "#172935");
+  label(
+    match.training
+      ? "PRACTICE"
+      : match.time >= 300
+        ? "REACTOR MELTDOWN"
+        : "WAVE " + match.wave + (match.wave % 3 === 0 ? " · BREAKER" : ""),
+    358,
+    28,
+  );
+  const seconds = Math.floor(match.time);
+  label(Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0"), 565, 28, "#f0cb95");
+  line(359, 38, 600, 38, "#70828a");
+  for (const u of match.units) {
+    if (!u.hp) continue;
+    const x = 359 + (u.x / Yard.width) * 241;
+    if (u.kind === "pilot")
+      poly(
+        [
+          [x, 32],
+          [x + 3, 36],
+          [x, 40],
+          [x - 3, 36],
+        ],
+        u === match.player ? "#fff4cb" : palette[u.team],
+      );
+    else box(x, 36, 3, 4, palette[u.team]);
+  }
+  if (!match.training) {
+    const team = match.player.team;
+    const tower = match.units.find((u) => u.kind === "sentry" && u.team !== team);
+    const target =
+      tower?.hp > 0 && match.time < 300
+        ? tower
+        : match.units.find((u) => u.kind === "reactor" && u.team !== team);
+    if (target) {
+      box(14, 365, 202, 44, "#132633ef");
+      label(
+        target.kind === "sentry" ? "PUSH · ENEMY SENTRY" : "FINISH · ENEMY REACTOR",
+        23,
+        381,
+        "#ffe4aa",
+        10,
+      );
+      box(23, 389, 145, 4, "#354754");
+      box(23, 389, (145 * target.hp) / target.max, 4, palette[target.team]);
+      label(Math.ceil(target.hp), 175, 394, "#e6e2d9", 10);
+      const keeper = match.units.find((u) => u.kind === "keeper");
+      label(
+        keeper
+          ? "UPPER VAULT · ACTIVE"
+          : match.drops.some((d) => d.type === "cell")
+            ? "UPPER VAULT · CELL LOOSE"
+            : "NEXT VAULT · " + Math.max(0, Math.ceil(match.neutralAt - match.time)) + "s",
+        23,
+        404,
+        "#abbec2",
+        9,
+      );
+    }
+  }
 }
-el("start").onclick=launch;
-const keys=["KeyA","KeyD","KeyW","KeyJ","KeyK","KeyE","Digit1","Space","ArrowLeft","ArrowRight","ArrowUp"];
-window.addEventListener("keydown",e=>{
-  if(e.code==="Escape"&&!e.repeat){if(mode==="pause")launch();else pause();return;}
-  if(mode!=="play"||!keys.includes(e.code))return;
-  e.preventDefault();if(!held.has(e.code))pressed.add(e.code);held.add(e.code);
+const lessonText = [
+  "Double jump, then press Shift in the air",
+  "Hold J and dash through the target",
+  "Jump above the target and press K",
+  "Training complete · Field menu to deploy",
+];
+function draw() {
+  const p = match.player;
+  camera = Math.max(0, Math.min(Yard.width - 960, p.x - 450));
+  backdrop();
+  ctx.save();
+  ctx.translate(-camera, 0);
+  deck(0, Yard.floor, Yard.width, true);
+  for (const [a, b, y] of Yard.platforms(match)) deck(a, y, b - a);
+  if (trial && trial.gate < gates.length) {
+    const [x, y] = gates[trial.gate];
+    ctx.strokeStyle = "#ffdc85";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(x, y - 21, 15, 20, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    label(String(trial.gate + 1), x - 4, y - 17, "#fff4cf", 14);
+  }
+  for (const x of Yard.switches) {
+    box(x - 5, 178, 9, 30, "#253a47");
+    box(x - 11, 173, 23, 13, "#eebb68");
+    label("E", x - 3, 183, "#19252d");
+  }
+  label("KILN  //  07", 805, 404, "#72828c", 21);
+  for (const u of match.units) drawUnit(u);
+  for (const d of match.drops) {
+    const y = d.y + (reducedMotion ? 0 : Math.sin(match.time * 5 + d.id) * 2),
+      r = d.type === "cell" ? 10 : 5;
+    poly(
+      [
+        [d.x, y - r],
+        [d.x + r, y],
+        [d.x, y + r],
+        [d.x - r, y],
+      ],
+      "#ffc878",
+    );
+    box(d.x - 1, y - 2, 2, 4, "#6f4a39");
+    if (d.type === "cell") label("CLAIM", d.x - 14, y - 15, "#fff0ba");
+  }
+  for (const s of match.shots) {
+    line(s.x, s.y, s.x - s.vx * 0.021, s.y - s.vy * 0.021, dark[s.team], 5);
+    line(s.x, s.y, s.x - s.vx * 0.013, s.y - s.vy * 0.013, palette[s.team], 2);
+    box(s.x - 1, s.y - 1, 3, 3, "#fff0bf");
+  }
+  for (const shell of match.mortars) {
+    const core = match.units.find((u) => u.id === shell.target);
+    if (!core) continue;
+    const t = 1 - shell.left / 0.85,
+      x = shell.x + (core.x - shell.x) * t;
+    const y = shell.y + (core.y - 35 - shell.y) * t - Math.sin(t * Math.PI) * 120;
+    circle(x, y, 6, palette[shell.team]);
+    circle(x, y, 3, "#fff0bb");
+  }
+  for (const f of match.fx) drawEffect(f);
+  ctx.restore();
+  worldHUD();
+  if (match.announcementUntil > match.time && !held.has("Tab")) {
+    ctx.textAlign = "center";
+    box(240, 54, 480, 19, "#172735e8");
+    label(match.announcement, 480, 67, "#ffd591", 10);
+    ctx.textAlign = "left";
+  }
+  if (held.has("Tab") && !match.training) {
+    drawScores();
+    pilotHUD();
+    return;
+  }
+  if (trial) {
+    const duration = trial.start === null ? 0 : (match.tick - trial.start) / 60;
+    const message =
+      trial.start === null
+        ? "Move to start · follow the gold gates"
+        : "GATE " +
+          Math.min(gates.length, trial.gate + 1) +
+          "/" +
+          gates.length +
+          "   " +
+          duration.toFixed(2) +
+          "s   ·   R restart";
+    box(220, 380, 520, 27, "#172935");
+    ctx.textAlign = "center";
+    label(message, 480, 398, "#ffe1ac", 14);
+    ctx.textAlign = "left";
+  } else if (match.training) {
+    box(196, 380, 568, 27, "#172935");
+    ctx.textAlign = "center";
+    label((lesson < 3 ? lesson + 1 + "/3   " : "") + lessonText[lesson], 480, 398, "#ffe1ac", 14);
+    ctx.textAlign = "left";
+  } else if (match.notice > 0 || !p.hp) {
+    box(295, 365, 370, 30, "#172935");
+    ctx.textAlign = "center";
+    label(
+      !p.hp
+        ? "DOWNED BY " + p.downedBy.toUpperCase() + "  ·  REDEPLOY " + Math.ceil(p.respawn) + "s"
+        : match.note,
+      480,
+      385,
+      "#ffd696",
+      13,
+    );
+    ctx.textAlign = "left";
+  }
+  pilotHUD();
+}
+function pilotHUD() {
+  const p = match.player;
+  const dash = Math.ceil(p.dash * 10) / 10,
+    pulse = Math.ceil(p.pulse * 10) / 10;
+  const key = [p.kit, Math.ceil(p.hp), p.max, dash, pulse, p.scrap, p.rank, p.grounded].join("|");
+  if (key === uiKey) return;
+  uiKey = key;
+  el("pilot").textContent = Math.ceil(p.hp) + " / " + p.max + " HP";
+  el("pilotName").textContent = Yard.kits[p.kit].name.toUpperCase();
+  el("dash").textContent = dash ? dash.toFixed(1) + "s" : "Ready";
+  el("pulse").textContent = pulse
+    ? pulse.toFixed(1) + "s"
+    : p.kit === "warden"
+      ? p.grounded
+        ? "Rally shield"
+        : "Bastion drop"
+      : p.grounded
+        ? "Arc pulse"
+        : "Pile driver";
+  el("dashFill").style.width =
+    100 * (1 - p.dash / (Yard.kits[p.kit].recharge - 0.25 * p.driveRank)) + "%";
+  el("pulseFill").style.width =
+    100 * (1 - p.pulse / ((p.kit === "warden" ? 6 : 4) - p.coilRank * 0.2)) + "%";
+  const cost = Yard.upgradeCost(p);
+  el("scrap").textContent = p.scrap + " scrap";
+  el("status").textContent = cost ? "RIG " + p.rank + "/6 · NEXT " + cost : "RIG COMPLETE";
+  for (const [id, tier] of [
+    ["gunMod", p.rank - p.driveRank - p.coilRank],
+    ["driveMod", p.driveRank],
+    ["coilMod", p.coilRank],
+  ]) {
+    el(id).classList.toggle("available", cost > 0 && p.scrap >= cost && tier < 3);
+  }
+}
+function clearInput() {
+  held.clear();
+  pressed.clear();
+  mouse.fire = false;
+}
+function showPanel(state, title, brief, button) {
+  el("panel").dataset.mode = state;
+  mode = state;
+  clearInput();
+  document.body.classList.remove("playing");
+  el("headline").textContent = title;
+  el("brief").textContent = brief;
+  el("tag").textContent = "RIVET RUSH   /   KILN YARD";
+  el("message").textContent = "";
+  el("panel").hidden = false;
+  el("mainActions").hidden = !button;
+  el("start").textContent = button || "Play skirmish";
+  el("roomActions").hidden = true;
+  el("extras").hidden = state !== "ready";
+  el("private").hidden = state !== "ready";
+  el("kits").hidden = el("kitInfo").hidden = state !== "ready" && state !== "lobby";
+  el("leave").hidden = state === "ready";
+  el("inviteWrap").hidden = true;
+  el("saveReplay").hidden = state !== "end";
+  el("saveReplay").disabled = false;
+  if (button) el("start").focus({ preventScroll: true });
+}
+function title() {
+  inviteCode = "";
+  trial = null;
+  playback = null;
+  el("replayTools").hidden = true;
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  el("private").textContent = "Private room";
+  match = Yard.create({ teamSize, kits: { 0: selectedKit } });
+  uiKey = "";
+  showPanel(
+    "ready",
+    "The Kiln Yard",
+    "Farm scrap with your crew, break the sentry, then finish the exposed reactor.",
+    "Play skirmish ↗",
+  );
+  showKit(selectedKit);
+  el("connection").textContent = "LOCAL";
+}
+function beginPlay() {
+  mode = "play";
+  debt = 0;
+  last = 0;
+  clearInput();
+  el("panel").hidden = true;
+  document.body.classList.add("playing");
+  sounds.unlock();
+}
+function startLocal(kind) {
+  localKind = kind;
+  trial = null;
+  match =
+    kind === "skirmish"
+      ? Yard.create({ teamSize, kits: { 0: selectedKit } })
+      : Yard.createTraining(selectedKit);
+  recording = kind === "skirmish" ? RivetReplay.recorder(match) : null;
+  if (kind === "trial") {
+    match.units = [match.player];
+    match.player.x = 165;
+    trial = { gate: 0, start: null };
+  }
+  lesson = 0;
+  sounds.seen.clear();
+  uiKey = "";
+  beginPlay();
+}
+function pause() {
+  if (mode === "replay") {
+    showPanel(
+      "replay-pause",
+      "Replay paused",
+      "Resume playback or return to the title.",
+      "Resume replay",
+    );
+    return;
+  }
+  if (mode !== "play") return;
+  if (room.phase === "play") {
+    showPanel(
+      "online-menu",
+      "Field menu",
+      "The room is live. Your pilot holds position until you return.",
+      "Resume fight",
+    );
+    room.input({});
+  } else
+    showPanel(
+      "pause",
+      "Shift paused",
+      "Resume your current fight or return to the title.",
+      "Resume fight",
+    );
+}
+function finish() {
+  const p = match.player,
+    won = match.winner === p.team,
+    draw = match.winner === 2;
+  const score =
+    p.kills +
+    " pilot KOs · " +
+    p.deaths +
+    " deaths · " +
+    p.lastHits +
+    " last hits · " +
+    Math.round(p.objectiveDamage) +
+    " objective damage · " +
+    match.contracts[p.team] +
+    " siege cells";
+  const network = room.phase === "end";
+  showPanel(
+    "end",
+    draw
+      ? match.endReason === "time"
+        ? "Both bases held"
+        : "Mutual shutdown"
+      : won
+        ? "Yard secured"
+        : "Reactor lost",
+    score,
+    network ? (room.lobby.host === room.seat ? "Back to room" : "") : "Play again ↗",
+  );
+  if (network && room.lobby.host !== room.seat)
+    el("message").textContent = "Waiting for the host to reopen the room.";
+  sounds.finish(won);
+}
+function roomLobby(lobby) {
+  if (location.hash !== "#room=" + room.room) history.replaceState(null, "", "#room=" + room.room);
+  el("connection").textContent = "PRIVATE ROOM";
+  if (lobby.phase === "end" && mode === "end") {
+    const host = lobby.host === room.seat;
+    el("mainActions").hidden = !host;
+    el("start").textContent = "Back to room";
+    el("message").textContent = host ? "" : "Waiting for the host to reopen the room.";
+  }
+  if (lobby.phase !== "lobby") return;
+  showPanel("lobby", "Crew quarters", "Pick a seat and ready up. Empty seats deploy as bots.", "");
+  el("roomActions").hidden = false;
+  const list = el("seats");
+  list.replaceChildren();
+  for (const i of [0, 1, 2, 3]) {
+    const s = lobby.seats[i],
+      b = document.createElement("button");
+    b.textContent =
+      (i % 2 ? "Cinder " : "Torch ") +
+      (Math.floor(i / 2) + 1) +
+      " · " +
+      (s
+        ? !s.online
+          ? "rejoining"
+          : i === room.seat
+            ? s.ready
+              ? "you ✓"
+              : "you"
+            : s.ready
+              ? "ready"
+              : "pilot"
+        : "take seat");
+    b.disabled = !!s;
+    b.classList.toggle("own", i === room.seat);
+    b.onclick = () => room.send({ type: "seat", slot: i });
+    list.append(b);
+  }
+  const me = lobby.seats[room.seat];
+  el("ready").textContent = me?.ready ? "Cancel ready" : "Ready up";
+  showKit(me?.kit || "runner");
+  el("deploy").hidden = lobby.host !== room.seat;
+  el("deploy").disabled = !lobby.seats.every((s) => !s || (s.ready && s.online));
+  el("tag").textContent =
+    "PRIVATE ROOM   /   " + lobby.seats.filter((s) => s?.online).length + " OF 4 PILOTS";
+}
+const room = new RivetRoom({
+  connecting: (text) => showPanel("connecting", "Opening comms", text, ""),
+  error: (text) => {
+    if (room.phase === "offline" && mode === "connecting")
+      showPanel(
+        "ready",
+        "The Kiln Yard",
+        "Play offline or open another private room.",
+        "Play skirmish ↗",
+      );
+    el("message").textContent = text;
+    if (room.phase === "offline" && inviteCode) {
+      el("private").hidden = false;
+      el("private").textContent = "Join invite";
+    }
+  },
+  lobby: roomLobby,
+  state: (game, fresh) => {
+    match = game;
+    if (fresh || mode === "connecting" || mode === "lobby") {
+      beginPlay();
+      el("connection").textContent = "LIVE · PRIVATE";
+    }
+    if (room.phase === "end" && mode !== "end") finish();
+  },
+  replay: downloadReplay,
+  left: title,
 });
-window.addEventListener("keyup",e=>held.delete(e.code));window.addEventListener("blur",pause);
-function frame(now){
-  if(mode==="play"){
-    debt+=last?Math.min(.1,(now-last)/1000):0;
-    while(debt>=1/60&&mode==="play"){
-      Yard.step(match,{left:held.has("KeyA")||held.has("ArrowLeft"),right:held.has("KeyD")||held.has("ArrowRight"),
-        jump:["KeyW","Space","ArrowUp"].some(k=>pressed.has(k)),fire:held.has("KeyJ"),pulse:pressed.has("KeyK"),crane:pressed.has("KeyE"),buy:pressed.has("Digit1")},1/60);
-      pressed.clear();debt-=1/60;
-      if(match.winner!==null)overlay("end",match.winner===0?"Yard secured":"Reactor lost","Shift complete after "+match.wave+" crawler waves.","PLAY AGAIN →");
+function downloadReplay(record) {
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(new Blob([JSON.stringify(record)], { type: "application/json" }));
+  link.href = url;
+  link.download = "rivet-" + record.signature + ".json";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  el("message").textContent = "Match replay saved.";
+}
+el("saveReplay").onclick = () => {
+  if (room.phase === "end") {
+    el("saveReplay").disabled = true;
+    room.send({ type: "replay" });
+  } else if (recording) downloadReplay(recording.export(match));
+};
+function showKit(kit) {
+  for (const b of el("kits").querySelectorAll("button"))
+    b.setAttribute("aria-pressed", String(b.dataset.kit === kit));
+  el("kitInfo").textContent =
+    kit === "warden"
+      ? "Heavy gauntlet. Shield your crew as you push."
+      : "Quick dash strikes and a heavy aerial finisher.";
+}
+for (const b of el("kits").querySelectorAll("button"))
+  b.onclick = () => {
+    selectedKit = b.dataset.kit;
+    room.preference = selectedKit;
+    showKit(selectedKit);
+    if (room.phase === "lobby") room.send({ type: "kit", kit: selectedKit });
+    else {
+      match = Yard.create({ teamSize, kits: { 0: selectedKit } });
+      uiKey = "";
+    }
+  };
+function drawScores() {
+  box(155, 82, 650, 206, "#10212df5");
+  label("CREW SCORE", 177, 109, "#ffe2a8", 16);
+  label(
+    "PILOT                         KO / DOWN     LAST HITS    FARM SCRAP    SIEGE DMG",
+    177,
+    137,
+    "#b3c8c8",
+    11,
+  );
+  const pilots = match.units
+    .filter((u) => u.kind === "pilot")
+    .sort((a, b) => a.team - b.team || a.seat - b.seat);
+  for (const [i, p] of pilots.entries()) {
+    const y = 160 + i * 28,
+      c = palette[p.team];
+    label((p === match.player ? "YOU · " : "") + Yard.kits[p.kit].name, 177, y, c, 13);
+    label(p.kills + " / " + p.deaths, 380, y);
+    label(p.lastHits, 479, y);
+    label(p.farmScrap, 565, y);
+    label(Math.round(p.objectiveDamage), 662, y);
+  }
+}
+function mainAction() {
+  sounds.unlock();
+  if (mode === "replay-pause") {
+    beginPlay();
+    mode = "replay";
+  } else if (mode === "pause" || mode === "online-menu") beginPlay();
+  else if (mode === "end" && room.phase === "end") room.send({ type: "rematch" });
+  else startLocal(mode === "end" || mode === "trial-end" ? localKind : "skirmish");
+}
+el("start").onclick = mainAction;
+el("format").onclick = () => {
+  teamSize = teamSize === 2 ? 1 : 2;
+  el("format").textContent = "Crew size · " + teamSize + "v" + teamSize;
+};
+el("private").onclick = () => room.connect(inviteCode);
+el("ready").onclick = () => room.send({ type: "ready", ready: !room.lobby.seats[room.seat].ready });
+el("deploy").onclick = () => room.send({ type: "start" });
+el("training").onclick = () => startLocal("training");
+el("trial").onclick = () => startLocal("trial");
+el("watch").onclick = () => el("replayFile").click();
+el("replayFile").onchange = async () => {
+  const file = el("replayFile").files[0];
+  el("replayFile").value = "";
+  if (!file) return;
+  try {
+    if (file.size > 4 * 1024 * 1024) throw Error("Replay is too large.");
+    const loaded = RivetReplay.load(JSON.parse(await file.text()));
+    playback = loaded;
+    match = playback.game;
+    recording = null;
+    replaySpeed = 1;
+    uiKey = "";
+    el("replayTools").hidden = false;
+    el("replaySpeed").textContent = "Playback · 1×";
+    el("connection").textContent = "REPLAY";
+    beginPlay();
+    mode = "replay";
+  } catch (error) {
+    el("message").textContent = error.message;
+  }
+};
+el("replaySpeed").onclick = () => {
+  replaySpeed = replaySpeed === 4 ? 1 : replaySpeed * 2;
+  el("replaySpeed").textContent = "Playback · " + replaySpeed + "×";
+};
+el("replaySeat").onclick = () => {
+  if (!playback) return;
+  const seats = match.units.filter((u) => u.kind === "pilot").length;
+  Yard.follow(match, (match.player.seat + 1) % seats);
+  uiKey = "";
+};
+el("copy").onclick = async () => {
+  const url = new URL(location.href);
+  url.hash = "room=" + room.room;
+  el("inviteLink").value = url.href;
+  try {
+    await navigator.clipboard.writeText(url.href);
+    el("message").textContent = "Invite copied.";
+  } catch {
+    el("inviteWrap").hidden = false;
+    el("inviteLink").select();
+    el("message").textContent = "Copy the selected invite link.";
+  }
+};
+el("leave").onclick = () => (room.phase === "offline" ? title() : room.leave());
+el("menuBtn").onclick = () => {
+  if (mode === "play" || mode === "replay") pause();
+  else if (["pause", "online-menu", "replay-pause"].includes(mode)) mainAction();
+};
+function soundButton() {
+  el("sound").textContent = sounds.enabled ? "Sound on" : "Sound off";
+  el("sound").setAttribute("aria-pressed", String(sounds.enabled));
+}
+el("sound").onclick = () => {
+  sounds.toggle();
+  soundButton();
+};
+soundButton();
+el("gunMod").onclick = () => {
+  if (mode === "play") pressed.add("Digit1");
+};
+el("driveMod").onclick = () => {
+  if (mode === "play") pressed.add("Digit2");
+};
+el("coilMod").onclick = () => {
+  if (mode === "play") pressed.add("Digit3");
+};
+const keys = new Set([
+  "KeyA",
+  "KeyD",
+  "KeyW",
+  "KeyS",
+  "KeyJ",
+  "KeyK",
+  "KeyE",
+  "Digit1",
+  "Digit2",
+  "Digit3",
+  "Space",
+  "Tab",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "ShiftLeft",
+  "ShiftRight",
+]);
+window.addEventListener("keydown", (e) => {
+  if (trial && e.code === "KeyR" && !e.repeat) {
+    e.preventDefault();
+    startLocal("trial");
+    return;
+  }
+  if (e.code === "Escape" && !e.repeat) {
+    if (["pause", "online-menu", "replay-pause"].includes(mode)) mainAction();
+    else pause();
+    return;
+  }
+  if (mode !== "play" || !keys.has(e.code)) return;
+  e.preventDefault();
+  if (!held.has(e.code)) pressed.add(e.code);
+  if (!e.repeat && ["KeyW", "ArrowUp", "Space"].includes(e.code)) pressed.delete("JumpRelease");
+  if (
+    !e.repeat &&
+    (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+    (held.has("KeyJ") || mouse.fire)
+  )
+    pressed.add("Strike");
+  held.add(e.code);
+});
+window.addEventListener("keyup", (e) => {
+  held.delete(e.code);
+  if (
+    mode === "play" &&
+    ["KeyW", "ArrowUp", "Space"].includes(e.code) &&
+    !["KeyW", "ArrowUp", "Space"].some((key) => held.has(key))
+  )
+    pressed.add("JumpRelease");
+});
+window.addEventListener("blur", () => {
+  clearInput();
+  if (room.phase === "play") room.input({});
+  else pause();
+});
+function pointer(e) {
+  const bounds = canvas.getBoundingClientRect();
+  mouse.x = ((e.clientX - bounds.left) * canvas.width) / bounds.width;
+  mouse.y = ((e.clientY - bounds.top) * canvas.height) / bounds.height;
+}
+canvas.addEventListener("pointermove", pointer);
+canvas.addEventListener("pointerdown", (e) => {
+  if (mode !== "play") return;
+  pointer(e);
+  sounds.unlock();
+  e.preventDefault();
+  if (e.button === 0) {
+    mouse.fire = true;
+    pressed.add("Mouse0");
+  }
+  if (e.button === 2) pressed.add("KeyK");
+});
+window.addEventListener("pointerup", (e) => {
+  if (e.button === 0) mouse.fire = false;
+});
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+function readInput() {
+  const p = match.player,
+    angle = Math.atan2(mouse.y - (p.y - Yard.height(p) / 2), mouse.x + camera - p.x);
+  return {
+    left: held.has("KeyA") || held.has("ArrowLeft"),
+    right: held.has("KeyD") || held.has("ArrowRight"),
+    down: held.has("KeyS") || held.has("ArrowDown"),
+    fire: held.has("KeyJ") || mouse.fire,
+    fireTap: pressed.has("KeyJ") || pressed.has("Mouse0") || pressed.has("Strike"),
+    aim:
+      mouse.fire || pressed.has("Mouse0")
+        ? (Math.round((angle * 128) / Math.PI) + 256) % 256
+        : null,
+    jump: ["KeyW", "Space", "ArrowUp"].some((k) => pressed.has(k)),
+    dash: pressed.has("ShiftLeft") || pressed.has("ShiftRight"),
+    jumpRelease: pressed.has("JumpRelease"),
+    pulse: pressed.has("KeyK"),
+    crane: pressed.has("KeyE"),
+    buy: pressed.has("Digit1"),
+    drive: pressed.has("Digit2"),
+    coil: pressed.has("Digit3"),
+  };
+}
+function frame(now) {
+  if (mode === "replay") {
+    debt += last ? Math.min(0.1, (now - last) / 1000) * replaySpeed : 0;
+    while (debt >= Yard.stepSeconds && mode === "replay") {
+      if (!playback.advance()) {
+        const matched = playback.verified();
+        el("replayTools").hidden = true;
+        showPanel(
+          "replay-end",
+          matched ? "Replay complete" : "Replay differs",
+          matched
+            ? "The recorded result and final state match this playback."
+            : "A rule or input differs from the recorded build.",
+          "",
+        );
+      }
+      debt -= Yard.stepSeconds;
     }
   }
-  last=now;draw();requestAnimationFrame(frame);
+  if (mode === "play" || mode === "online-menu") {
+    debt += last ? Math.min(0.1, (now - last) / 1000) : 0;
+    while (debt >= Yard.stepSeconds && (mode === "play" || mode === "online-menu")) {
+      const input = mode === "online-menu" ? {} : readInput();
+      if (room.phase === "play") room.input(input);
+      else if (match.training) {
+        Yard.stepSeats(match, { 0: input, 1: {} });
+        const p = match.player;
+        if (trial) updateTrial(input);
+        else if (lesson === 0 && p.jumps >= 2 && p.dashLeft > 0) lesson++;
+        else if (lesson === 1 && p.lungesLanded > 0) {
+          lesson++;
+          p.slamsLanded = 0;
+        } else if (lesson === 2 && p.slamsLanded > 0) lesson++;
+      } else {
+        recording?.capture(match.tick, { 0: input });
+        Yard.step(match, input);
+      }
+      pressed.clear();
+      debt -= Yard.stepSeconds;
+      if (match.winner !== null && room.phase === "offline") finish();
+    }
+  }
+  if (room.phase === "play" && room.game) match = room.sample(now);
+  if (mode === "play") sounds.observe(match);
+  last = now;
+  draw();
+  requestAnimationFrame(frame);
+}
+function updateTrial(input) {
+  if (trial.start === null && (input.left || input.right || input.jump || input.dash))
+    trial.start = match.tick - 1;
+  if (trial.start === null) return;
+  const [x, y] = gates[trial.gate],
+    p = match.player;
+  if (Math.hypot(p.x - x, p.y - y) > 32) return;
+  trial.gate++;
+  sounds.event("salvage");
+  if (trial.gate < gates.length) return;
+  const seconds = (match.tick - trial.start) / 60;
+  const key = "rivet-lap-02-" + p.kit;
+  let best = seconds;
+  try {
+    const previous = Number(localStorage.getItem(key));
+    if (previous > 0) best = Math.min(previous, best);
+    localStorage.setItem(key, String(best));
+  } catch {}
+  showPanel(
+    "trial-end",
+    "Run complete",
+    Yard.kits[p.kit].name +
+      "   ·   " +
+      seconds.toFixed(2) +
+      "s   ·   Personal best " +
+      best.toFixed(2) +
+      "s",
+    "Race again ↗",
+  );
+}
+const supplied = new URLSearchParams(location.hash.slice(1)).get("room");
+if (supplied && /^[A-Za-z0-9_-]{16}$/.test(supplied)) {
+  inviteCode = supplied;
+  room.connect(inviteCode);
 }
 requestAnimationFrame(frame);

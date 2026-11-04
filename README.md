@@ -1,27 +1,35 @@
 # Rivet Rush
 
-A desktop-browser, single-player 2D MOBA prototype inspired by Awesomenauts. Two salvage crews escort scrap crawlers across the Kiln Yard. Break the enemy reactor before its crew breaks yours.
+A side-scrolling MOBA for up to four pilots. Farm crawlers for scrap, build your pilot, and fight alongside your teammate to destroy the enemy sentry and reactor. The Kiln Yard has a ground lane for siege waves and an upper platform where both crews can contest a reinforcement.
 
-## Play
+## Play on your computer
 
-Open `index.html` in a desktop browser and select **Deploy pilot**. The game runs offline with no installation or build step. To serve it over localhost instead, run `python -m http.server 8000` in the project folder and open http://localhost:8000.
+Download or clone this repository, open `index.html` in a desktop browser, pick **Arc Runner** or **Kiln Warden**, then select **Play skirmish**. You control one pilot. Bots fill the other seats. **Crew size** switches between 1v1 and 2v2. **Training deck** teaches a double jump, dash strike and aerial finisher. **Movement run** times you across six checkpoints on the same map and keeps a personal best per pilot on this device. R restarts a run.
 
-| Input | Action |
+## Play with friends
+
+The host needs Node.js 22 or newer. From the project folder run:
+
+```sh
+npm ci
+npm start
+```
+
+Open [the local game](http://127.0.0.1:8080), choose **Private room**, select a pilot and ready up. The host selects **Deploy crew** once everyone is ready. Seats on the same crew play together. Empty seats get bots. Use a host address reachable by your friends before copying the invite. On a shared LAN, follow the [hosting guide](docs/hosting.md). Friends joining an existing host need only the invite and a desktop browser.
+
+## Your first push
+
+| Move | Input |
 | --- | --- |
-| A / D or arrow keys | Move and face left or right |
-| W, Up or Space | Jump, then kick once in midair |
-| J (hold) | Fire rivets. Your gun aims at the nearest enemy ahead within range. |
-| K | Release a short-range shock pulse. Recharges in four seconds. |
-| E | Operate the upper-deck crane switch to open a ten-second crossing. |
-| 1 | Spend 12 crew scrap on a damage upgrade, up to three times. |
-| Escape | Pause or resume |
+| Run, jump twice, drop through a platform or fast-fall | A/D steers. Tap W for a short hop or hold it for height. S drops through decks or slides on the ground at speed. Arrows and Space also work. |
+| Dash through a projectile or commit to a shoulder strike | Shift dashes. Jump during a clean dash to carry speed. Hold fire and dash to strike. |
+| Fire the gauntlet | Hold J for assisted forward fire. Left mouse aims and fires toward the pointer. |
+| Use your pilot ability | K or right-click. From the air, the attack lands as a dive. Warden also shields allied pilots and crawlers. |
+| Buy a mod | 1 for rivets, 2 for the drive, 3 for coils. The rig shows the next scrap price. |
+| Operate a crossing, check the score, open the menu | E by either upper switch, hold Tab, Escape. |
 
-Crawlers deploy every 12 seconds. Stay behind them while they draw sentry fire, or wait for the dashed aiming line and jump clear before the shot arrives. Enemy losses earn crew scrap, even when a friendly crawler lands the final shot. Pilots return five seconds after destruction. The upper platforms offer a route over the central fight.
+Walk with your first crawler wave. Land the finishing shot on enemy crawlers for bonus scrap, then collect the dropped salvage before an opponent takes it. Use a friendly Breaker to push the sentry. Fall back near your reactor to repair. After the enemy sentry falls, finish its reactor. At five minutes both reactors enter meltdown. Escort a Breaker past midfield to earn a charged base shot. A pilot or NPC still has to deliver the final hit. If both bases hold for seven minutes, the match is a draw.
 
-## Development
+At the result screen, **Save match replay** exports an anonymous input recording. Open **Watch replay** on the title screen to view it on the matching build, switch pilots or speed up playback.
 
-Start with the [game handbook](docs/README.md) for mechanics, design research, playtesting and the beta roadmap. Contributors and agents should follow the [repository rules](AGENTS.md) and [documentation update matrix](docs/updating.md) with every change.
-
-The prototype has one arena, one playable pilot and one opposing bot. All characters, environment art and combat rules are implemented for this project. The bot and crawlers fight along the lower deck. Multiplayer is outside this first build.
-
-`match.js` holds the fixed-step simulation. `yard.js` handles Canvas rendering and keyboard controls. Run `node --test tests/match.test.js` to check the match rules. The seeded scenery generator credits its upstream author in [THIRD_PARTY.md](THIRD_PARTY.md). The projectile hitboxes use the axis-aligned collision approach described by [MDN](https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection).
+The [game handbook](docs/README.md) contains the rules, test procedures and beta roadmap. Contributors should start with [AGENTS.md](AGENTS.md). Third-party licenses and asset provenance are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).

@@ -1,12 +1,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const Yard = require("../match");
+const {commands}=require("../tools/match-lab.cjs");
 function advance(m, seconds, controls = () => ({})) {
   for(let tick=0;tick<Math.round(seconds*60);tick++) Yard.step(m,controls(tick),1/60);
 }
 test("the pilot can reach the crane using the first two platforms",()=>{
   const m=Yard.create(), p=m.player;
-  advance(m,4.8,tick=>({right:p.x<714,jump:[38,53,147,163].includes(tick)}));
+  advance(m,4.8,()=>({right:p.x<714,jump:(p.grounded&&p.y===345&&p.x>282)||
+    (p.grounded&&p.y===275&&p.x>450)||(p.x>490&&p.jumps===1&&p.vy> -110)}));
   assert.equal(p.y,208);
   Yard.step(m,{crane:true},1/60);
   assert.equal(m.bridge,10);
@@ -14,9 +16,9 @@ test("the pilot can reach the crane using the first two platforms",()=>{
 });
 test("a push with crew upgrades can end the match",()=>{
   const m=Yard.create();
-  advance(m,250,()=>({right:m.player.x<1600,fire:true,buy:m.scrap>=12,pulse:true}));
+  advance(m,395,()=>commands(m,m.player,"siege"));
   assert.equal(m.winner,0);
-  assert.equal(m.rank,3);
+  assert.equal(m.rank,6);
   const end=m.time;
   advance(m,2);assert.equal(m.time,end);
 });
@@ -35,8 +37,8 @@ test("a sentry warns before firing and jumping clears the locked shot",()=>{
     assert.equal(m.shots.length,0);
     advance(m,.35,tick=>({jump:jump&&tick===0}));
     assert.equal(sentry.aim,null);
-    return m.player.hp;
+    return m.player.max - m.player.hp;
   }
-  assert.equal(encounter(false),123);
-  assert.equal(encounter(true),135);
+  assert.equal(encounter(false),12);
+  assert.equal(encounter(true),0);
 });
