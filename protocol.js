@@ -1,7 +1,7 @@
 "use strict";
 // Shared wire vocabulary. Held movement survives ticks. Edge actions are consumed once.
 const RivetWire = (() => {
-  const version = 7;
+  const version = 8;
   const held = ["left", "right", "fire", "down"];
   const edges = [
     "jump",
@@ -13,6 +13,9 @@ const RivetWire = (() => {
     "coil",
     "fireTap",
     "jumpRelease",
+    "skill2",
+    "skill3",
+    "ultimate",
   ];
   const actions = [...held, ...edges];
   function encode(input) {
@@ -26,7 +29,7 @@ const RivetWire = (() => {
   // Keep schemas beside the encoder and decoder. The authoritative simulation
   // retains full precision. Clients receive hundredths of a pixel or second.
   const kinds = ["pilot", "crawler", "breaker", "sentry", "reactor", "keeper"];
-  const common = ["id", "team", "x", "y", "hp", "dir", "cd", "flash", "barrier"];
+  const common = ["id", "team", "x", "y", "hp", "dir", "cd", "flash", "barrier", "slow", "slowTime"];
   const pilotFields = [
     "seat",
     "kit",
@@ -64,6 +67,14 @@ const RivetWire = (() => {
     "slideLeft",
     "slideCooldown",
     "recap",
+    "cooldowns",
+    "anchor",
+    "skillDashSpeed",
+    "skillDashVy",
+    "skillDashDamage",
+    "skillDashForce",
+    "skillDashLift",
+    "castMask",
   ];
   const flags = [
     "grounded",
@@ -73,8 +84,10 @@ const RivetWire = (() => {
     "repairing",
     "canShortHop",
     "slideLatched",
+    "skillDash",
+    "skillEvade",
   ];
-  const shotFields = ["id", "source", "team", "x", "y", "vx", "vy", "siege"];
+  const shotFields = ["id", "source", "team", "x", "y", "vx", "vy", "siege", "ability"];
   const effectFields = ["id", "kind", "team", "dir", "x", "y", "size", "duration", "life"];
   const dropFields = ["id", "team", "x", "y", "amount", "life", "type"];
   const mortarFields = ["id", "team", "x", "y", "target", "left"];
@@ -119,6 +132,8 @@ const RivetWire = (() => {
       fx: m.fx.map((f) => values(f, effectFields)),
       drops: m.drops.map((d) => values(d, dropFields)),
       mortars: m.mortars.map((s) => values(s, mortarFields)),
+      zones: m.zones.map((z) => ({ id: z.id, source: z.source, team: z.team, x: z.x, y: z.y,
+        radius: z.radius, left: z.left, delay: z.delay, heal: z.heal, shield: z.shield, trigger: z.trigger })),
     };
   }
   function unpack(packet, stats, kits) {

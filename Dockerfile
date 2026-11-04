@@ -3,7 +3,7 @@ ENV NODE_ENV=production PORT=8080 BIND_ADDRESS=0.0.0.0
 WORKDIR /game
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
-COPY index.html arena.css match.js protocol.js replay.js online.js yard.js sound.js THIRD_PARTY.md ./
+COPY index.html arena.css heroes.js abilities.js match.js protocol.js replay.js online.js yard.js sound.js THIRD_PARTY.md ./
 COPY assets ./assets
 COPY server ./server
 USER node

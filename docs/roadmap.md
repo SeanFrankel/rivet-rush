@@ -2,15 +2,15 @@
 
 **Decision requested at the finish line:** Can the host send a private link to four friends on different home networks, step away, and have them play, finish and rematch a fair 2v2? Can a second operator diagnose a failed match and safely restore the last good build? Both outcomes are required to open the beta.
 
-**Release status.** The repository now contains offline skirmishes and four-seat, server-authoritative private rooms. The implementation includes two distinct pilots, lane farming, a neutral siege objective, upgrades and a reactor finish. The local room and network drills provide engineering evidence. Internet staging and independent human playtests are still required. Use the [game rules](gameplay.md) for shipped behavior and the [verification guide](verification.md) to repeat the checks.
+**Release status.** The repository now contains offline skirmishes and four-seat, server-authoritative private rooms. The implementation includes six distinct pilots, lane farming, a neutral siege objective, upgrades and a reactor finish. The local room and network drills provide engineering evidence. Internet staging and independent human playtests are still required. Use the [game rules](gameplay.md) for shipped behavior and the [verification guide](verification.md) to repeat the checks.
 
 ## Product contract
 
-Ship one hosted region, one map, two complementary pilot kits, two pilots per crew, and a private ready-up room. Four humans get a full 2v2. Two friends can play on the same side against bots or on opposite sides with one bot each. Empty seats can be filled with bots before deploy. Keep solo offline practice. A first-time friend needs only a desktop browser, keyboard and invite. Support desktop Chrome, Edge and Firefox on the tested OS/browser combinations below.
+Ship one hosted region, one map, six complementary pilot kits, two pilots per crew, and a private ready-up room. Four humans get a full 2v2. Two friends can play on the same side against bots or on opposite sides with one bot each. Empty seats can be filled with bots before deploy. Keep solo offline practice. A first-time friend needs only a desktop browser, keyboard and invite. Support desktop Chrome, Edge and Firefox on the tested OS/browser combinations below.
 
 The reason to play with a friend is the fight around a wave. A Warden can shield the escort while a Runner launches an enemy away from the Breaker. A crew can trade lane pressure for the upper vault or punish an opponent that rotates too early. Test whether moving, farming and fighting feel good from both sides and whether the loser can describe a useful response. The optional bridge is one route through this arena.
 
-Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, a second arena and additional pilot kits. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
+Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, a second arena and pilot kits beyond the six. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
 
 ## Capacity and schedule
 
@@ -81,3 +81,9 @@ The automated evidence and current limitations are recorded in the [engineering 
 The next iteration's evidence is in the [teamplay and release-readiness record](playtests/2026-11-03-teamplay.md). Next external gate remains a reachable HTTPS/WSS staging host and a four-friend session. Additional pilots, maps and art remain deferred while these hypotheses are untested.
 
 The [design and art principles proposal](art-direction.md) is ready for owner review. Keep the current game art/assets/direction during mechanics work. Approval and a readable visual slice precede any rollout of the proposed style; no gameplay milestone waits for that art pass.
+
+## Owner-directed roster iteration · 2026-11-03
+
+The owner expanded the roster to six heroes with four active abilities each, with three genuine melee and three ranged basic attacks. This supersedes the original two-kit scope. The [character guide](characters.md) owns their design and matchup questions. Prioritize satisfying traversal, wave farming, readable fights, teammate protection and converting a won fight to base damage. Keep the existing art and simple shop. Performance and release-hardening work are deferred during this gameplay iteration; existing beta gates remain open rather than being silently waived.
+
+Next human session: swap melee/ranged roles, then crews. Try a protected escort, an upper-route flank and a neutral contest. Each player should demonstrate one successful engage and one answer to it. Track unavoidable damage, useless abilities, long walks without a decision and fights that fail to produce objective pressure. Revise those failures before adding more content. Automated checks establish operation and symmetry, not that the roster is balanced or fun.

@@ -9,6 +9,8 @@ const files = [
   "index.html",
   "arena.css",
   "match.js",
+  "heroes.js",
+  "abilities.js",
   "protocol.js",
   "replay.js",
   "online.js",

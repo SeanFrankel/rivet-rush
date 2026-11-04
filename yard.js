@@ -483,7 +483,7 @@ function drawUnit(u) {
           : u.team === match.player.team
             ? "ALLY"
             : "RIVAL";
-    label(tag, u.x - 10, y - 5, c, 9);
+    label(tag + " · " + Yard.kits[u.kit].name, u.x - 28, y - 5, c, 9);
   }
 }
 
@@ -498,6 +498,9 @@ function drawEffect(f) {
     ctx.scale(f.dir, 1);
     for (let i = 0; i < 4; i++)
       line(-15 - t * 20, -10 + i * 6, 22 - t * 45, -12 + i * 6, i % 2 ? color : "#ffe1ad", 2);
+  } else if (f.kind === "slash") {
+    ctx.scale(f.dir, 1); ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0, 0, f.size * .85, -1.4, 1.4); ctx.stroke();
   } else if (f.kind === "kick") {
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -738,7 +741,7 @@ function drawFarmFeedback() {
 const lessonText = [
   "Double jump, then press Shift in the air",
   "Hold J and dash through the target",
-  "Jump above the target and press K",
+  "Try all four abilities: Q / E / R / F",
   "Training complete · Field menu to deploy",
 ];
 function draw() {
@@ -765,10 +768,26 @@ function draw() {
   for (const x of Yard.switches) {
     box(x - 5, 178, 9, 30, "#253a47");
     box(x - 11, 173, 23, 13, "#eebb68");
-    label("E", x - 3, 183, "#19252d");
+    label("C", x - 3, 183, "#19252d");
   }
   label("KILN  //  07", 805, 404, "#72828c", 21);
-  for (const u of match.units) drawUnit(u);
+  for (const z of match.zones || []) {
+    ctx.save(); ctx.strokeStyle = palette[z.team]; ctx.lineWidth = 2;
+    ctx.setLineDash(z.delay > 0 ? [5, 5] : z.trigger ? [2, 4] : []);
+    ctx.fillStyle = palette[z.team] + "18";
+    ctx.beginPath(); ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    label(z.delay > 0 ? "ARMING" : z.trigger ? "TRAP" : z.heal || z.shield ? "SUPPORT" : "DANGER", z.x - 20, z.y - z.radius - 5, palette[z.team], 9);
+    ctx.restore();
+  }
+  for (const u of match.units) {
+    if (u.hp && u.anchor) {
+      ctx.save(); ctx.strokeStyle = palette[u.team]; ctx.setLineDash([4, 4]);
+      ctx.strokeRect(u.anchor.x - 10, u.anchor.y - 30, 20, 30);
+      label("ANCHOR " + Math.ceil(u.anchor.left), u.anchor.x - 25, u.anchor.y - 36, palette[u.team], 9);
+      ctx.restore();
+    }
+    drawUnit(u);
+  }
   for (const d of match.drops) {
     const y = d.y + (reducedMotion ? 0 : Math.sin(match.time * 5 + d.id) * 2),
       r = d.type === "cell" ? 10 : 5;
@@ -908,25 +927,24 @@ function pilotHUD() {
     p.driveRank,
     p.coilRank,
     p.grounded,
+    ...p.cooldowns.map((v) => Math.ceil(v * 10)),
+    p.anchor ? Math.ceil(p.anchor.left * 10) : 0,
   ].join("|");
   if (key === uiKey) return;
   uiKey = key;
   el("pilot").textContent = Math.ceil(p.hp) + " / " + p.max + " HP";
   el("pilotName").textContent = Yard.kits[p.kit].name.toUpperCase();
   el("dash").textContent = dash ? dash.toFixed(1) + "s" : "Ready";
-  el("pulse").textContent = pulse
-    ? pulse.toFixed(1) + "s"
-    : p.kit === "warden"
-      ? p.grounded
-        ? "Rally shield"
-        : "Bastion drop"
-      : p.grounded
-        ? "Arc pulse"
-        : "Pile driver";
   el("dashFill").style.width =
     100 * (1 - p.dash / (Yard.kits[p.kit].recharge - 0.25 * p.driveRank)) + "%";
-  el("pulseFill").style.width =
-    100 * (1 - p.pulse / ((p.kit === "warden" ? 6 : 4) - p.coilRank * 0.2)) + "%";
+  Yard.skills[p.kit].forEach((skill, slot) => {
+    const button = el("ability" + slot), remaining = Yard.skillCooldown(p, slot);
+    const returning = slot === 1 && p.anchor;
+    button.textContent = ["Q", "E", "R", "F"][slot] + " · " + skill.name + " · " +
+      (returning ? "Return " + Math.ceil(p.anchor.left) + "s" : remaining > 0 ? remaining.toFixed(1) + "s" : "Ready");
+    button.title = skill.description + " Counterplay: " + skill.counterplay;
+    button.disabled = !p.hp || (remaining > 0 && !returning) || mode !== "play";
+  });
   const cost = Yard.upgradeCost(p);
   el("scrap").textContent = p.scrap + " scrap";
   el("status").textContent = cost ? "RIG " + p.rank + "/6 · NEXT " + cost : "RIG COMPLETE";
@@ -940,7 +958,7 @@ function pilotHUD() {
     el(id).disabled = !available;
     const names = { gunMod: "Rivets", driveMod: "Drive", coilMod: "Coils" };
     const descriptions = {
-      gunMod: "+4 shot damage",
+      gunMod: "+4 basic attack damage",
       driveMod: "+18 HP, dash recharge −0.25s",
       coilMod: "+4 ability damage, recharge −0.2s" + (p.kit === "warden" ? ", +5 barrier" : ""),
     };
@@ -1279,11 +1297,19 @@ el("saveReport").onclick = async () => {
 function showKit(kit) {
   for (const b of el("kits").querySelectorAll("button"))
     b.setAttribute("aria-pressed", String(b.dataset.kit === kit));
-  el("kitInfo").textContent =
-    kit === "warden"
-      ? "Heavy gauntlet. Shield your crew as you push."
-      : "Quick dash strikes and a heavy aerial finisher.";
+  el("kitInfo").textContent = Yard.kits[kit].summary + " " +
+    Yard.skills[kit].map((skill, slot) => ["Q", "E", "R", "F"][slot] + " · " + skill.name).join(" / ");
 }
+el("kits").replaceChildren(...Object.entries(Yard.kits).map(([id, kit]) => {
+  const button = document.createElement("button"), detail = document.createElement("small");
+  button.dataset.kit = id; button.textContent = kit.name;
+  detail.textContent = kit.attackType.toUpperCase() + " · " + kit.role;
+  button.append(detail); return button;
+}));
+showKit(selectedKit);
+for (let slot = 0; slot < 4; slot++) el("ability" + slot).onclick = () => {
+  if (mode === "play") pressed.add(["KeyQ", "KeyE", "KeyR", "KeyF"][slot]);
+};
 for (const b of el("kits").querySelectorAll("button"))
   b.onclick = () => {
     selectedKit = b.dataset.kit;
@@ -1425,6 +1451,10 @@ const keys = new Set([
   "KeyS",
   "KeyJ",
   "KeyK",
+  "KeyQ",
+  "KeyR",
+  "KeyF",
+  "KeyC",
   "KeyE",
   "Digit1",
   "Digit2",
@@ -1515,14 +1545,17 @@ function readInput() {
     fire: held.has("KeyJ") || mouse.fire,
     fireTap: pressed.has("KeyJ") || pressed.has("Mouse0") || pressed.has("Strike"),
     aim:
-      mouse.fire || pressed.has("Mouse0")
+      mouse.fire || pressed.has("Mouse0") || (mouse.inside && ["KeyQ", "KeyK", "KeyE", "KeyR", "KeyF"].some((key) => pressed.has(key)))
         ? (Math.round((angle * 128) / Math.PI) + 256) % 256
         : null,
     jump: ["KeyW", "Space", "ArrowUp"].some((k) => pressed.has(k)),
     dash: pressed.has("ShiftLeft") || pressed.has("ShiftRight"),
     jumpRelease: pressed.has("JumpRelease"),
-    pulse: pressed.has("KeyK"),
-    crane: pressed.has("KeyE"),
+    pulse: pressed.has("KeyQ") || pressed.has("KeyK"),
+    skill2: pressed.has("KeyE"),
+    skill3: !trial && pressed.has("KeyR"),
+    ultimate: pressed.has("KeyF"),
+    crane: pressed.has("KeyC"),
     buy: pressed.has("Digit1"),
     drive: pressed.has("Digit2"),
     coil: pressed.has("Digit3"),
@@ -1559,8 +1592,8 @@ function frame(now) {
         else if (lesson === 0 && p.jumps >= 2 && p.dashLeft > 0) lesson++;
         else if (lesson === 1 && p.lungesLanded > 0) {
           lesson++;
-          p.slamsLanded = 0;
-        } else if (lesson === 2 && p.slamsLanded > 0) lesson++;
+          p.slamsLanded = 0; p.castMask = 0;
+        } else if (lesson === 2 && p.castMask === 15) lesson++;
       } else {
         recording?.capture(match.tick, { 0: input });
         Yard.step(match, input);

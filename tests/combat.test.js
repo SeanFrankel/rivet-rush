@@ -164,7 +164,7 @@ test("crew purchases are independent and the health mod survives a respawn", () 
   Yard.stepSeats(m, { ...idle, 0: { drive: true }, 2: { buy: true } });
   assert.equal(p.max, 168);
   assert.equal(p.damage, 10);
-  assert.equal(ally.damage, 18);
+  assert.equal(ally.damage, 26);
   assert.equal(ally.max, 190);
   assert.equal(ally.scrap, 0);
   p.hp = 0;

@@ -14,16 +14,15 @@ One or two pilots per crew push a shared lane. Online rooms field two pilots per
 
 ## Pilots
 
-| Pilot | HP | Run speed | Rivet range / damage / interval | Dash speed / base recharge | Ability |
-| --- | ---: | ---: | --- | --- | --- |
-| Arc Runner | 150 | 205 px/s | 248 px / 10 / 0.26 s | 585 px/s / 2.1 s | Ground pulse deals 32 damage within 110 px. Aerial Pile Driver deals 44 within 116 px and launches enemies. Recharges in 4 s. |
-| Kiln Warden | 190 | 179 px/s | 203 px / 14 / 0.39 s | 465 px/s / 2.6 s | Ground rally deals 18 damage. Bastion Drop deals 27 and launches. Either grants up to 32 barrier to the Warden and allied mobile units within 138 px for 2.4 s. Recharges in 6 s. |
+Six pilots each have four active abilities on **Q/E/R/F**, plus a basic attack, double jump and shared Shift dash. [Character guide](characters.md) is authoritative for kit numbers, combos and counterplay. Warden, Rook and Echo use directional melee cleaves; Runner, Vesper and Fuse fire projectiles. Melee hits every enemy in its forward arc within range, never launches a basic projectile, and cannot hit the Keeper from below the upper decks.
+
+Abilities have independent cooldowns. E/R/F cooldowns continue through death; Q resets on respawn as before. Coils distributes its +4 damage budget across a cast's damaging parts, pellets and timed pulses, rather than adding +4 to every pellet. Shields refresh to the stronger value without shortening an existing longer barrier. Damage zones show their actual radius, traps show their arming interval and anchors remain visible to both crews. NPCs can consume traps and intercept ability shots; structures resist displacement. Echo's anchor restores position only, never health or cooldowns.
 
 Shift dashes in the pilot's facing direction for 0.18 s. A clean dash evades rivets during its opening frames. Holding fire commits to a shoulder attack that can hit each enemy once for 25 (Runner) or 29 (Warden) and knock mobile targets away. A dive has a 0.15 s windup before the fall and 0.21 s of landing recovery. The pilot can steer slightly during the dive. Sentries and reactors hold position against knockback.
 
 Ground acceleration reaches full running speed in about five frames for a Runner. Steering in the air preserves forward momentum. A deliberate opposite input immediately brakes the pilot's own velocity and starts the turn on the next simulation tick. Knockback and committed attacks retain their recovery. Tap jump for a short hop or hold for a full jump. A jump during an evasive dash cancels its protection and starts a leap at 1.78 times run speed. A shoulder strike commits through the dash. At speed on the floor, hold S to slide for up to 0.38 s with a 21 px hitbox. Jump to carry the slide forward or steer against it to brake. A fresh slide requires a new press and a 0.85 s cooldown. Jump twice with W, Up or Space. A small grace period after leaving an edge (85 ms) and a jump buffer before landing (110 ms) allow close inputs to connect. Hold S/Down to descend through one-way decks or fast-fall after the apex. Movement and hits resolve in separate phases so two lethal attacks in the same tick can trade.
 
-J aims at the nearest living opponent ahead within range. With no target it fires horizontally. Left mouse aims freely, including while retreating. Rivets travel at 600 px/s for their range plus 24 px. The first enemy hitbox along the shot intercepts it. Decks allow shots through. The Keeper can be hit by pilots firing from the upper decks.
+For ranged pilots, J aims at the nearest living opponent ahead within range. With no target it fires horizontally. Left mouse aims freely, including while retreating. Rivets travel at 600 px/s for their range plus 24 px. The first enemy hitbox along the shot intercepts it. Decks allow shots through. The Keeper can be hit by pilots firing from the upper decks.
 
 ## Farming and builds
 
@@ -39,11 +38,11 @@ Each crew receives three crawlers per wave, immediately on deploy and every 12 s
 
 Salvage remains for six seconds. The winning crew gets the first second to collect it. Afterward either crew can take it by moving within 33 px. The closest eligible pilot collects. Opponents tied at the same distance contest the pickup. Last hits and pickup income appear in the scoreboard's farming columns.
 
-Purchases are personal and work anywhere while alive. Buy up to six mods per match, with up to three in each track. Successive purchases cost **12, 20, 28, 36, 44 and 52 scrap**. Rivets add 4 shot damage. Drive adds 18 maximum and current HP and reduces dash recharge by 0.25 s. Coils add 4 ability damage, reduce its recharge by 0.2 s and add 5 barrier strength for a Warden. Mods and unspent scrap survive a death and reset on rematch.
+Purchases are personal and work anywhere while alive. Buy up to six mods per match, with up to three in each track. Successive purchases cost **12, 20, 28, 36, 44 and 52 scrap**. Rivets add 4 basic-attack damage (including melee). Drive adds 18 maximum and current HP and reduces dash recharge by 0.25 s. Coils add 4 ability damage, reduce each ability recharge by 0.2 s and add 5 strength to direct ability barriers. Mods and unspent scrap survive a death and reset on rematch.
 
 ## Map, NPCs and objectives
 
-The arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored lower decks, upper decks, crossing switches, sentries and reactors. Lower decks sit 70 px above the floor, upper decks 137 px above it and the central vault deck 196 px above it. Either switch opens the upper crossing for ten seconds. The bridge is one optional route.
+The arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored lower decks, upper decks, crossing switches, sentries and reactors. Lower decks sit 70 px above the floor, upper decks 137 px above it and the central vault deck 196 px above it. C at either switch opens the upper crossing for ten seconds. The bridge is one optional route.
 
 | Unit | HP | Movement / target range | Attack |
 | --- | ---: | --- | --- |
@@ -55,7 +54,7 @@ The arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored lo
 
 The first Keeper spawns at 0:48. After it falls, the siege cell stays on the upper deck for ten seconds. Carrying it is automatic on contact. Each pilot on the claiming crew gets 6 scrap and the next wave gains a bonus Breaker. The Keeper returns 75 s after defeat. A kill alone leaves the cell open to a steal.
 
-At home, a wounded pilot within 106 px horizontally of their reactor repairs 24 HP/s once two seconds have elapsed without taking damage. Respawn delay starts at five seconds and adds one every 75 s, up to nine. On respawn, a pilot returns with full health and up to 1.1 s of protection. Firing or using the pulse/drop ends that protection.
+At home, a wounded pilot within 106 px horizontally of their reactor repairs 24 HP/s once two seconds have elapsed without taking damage. Respawn delay starts at five seconds and adds one every 75 s, up to nine. On respawn, a pilot returns with full health and up to 1.1 s of protection. Attacking or using any ability ends that protection.
 
 ## Live and solo play
 

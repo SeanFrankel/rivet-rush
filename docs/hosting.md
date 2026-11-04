@@ -58,3 +58,5 @@ CI builds the package, installs production dependencies, boots that package in a
 On SIGTERM or SIGINT the host declines new rooms and match starts and waits up to 30 seconds for active games. Longer matches are interrupted. Use a scheduled break between games for routine releases. For a bad rollout, restore the previous **client and server together**, confirm health and test a fresh two-device join, match end and rematch. A restart loses in-memory rooms. Testers need a new invite. No database migration or persistent progression is involved.
 
 The [beta acceptance matrix](roadmap.md) adds human canaries, real WAN sessions, operator rehearsal and hosting budgets to these local checks.
+
+The six-hero build uses protocol 8 and replay rules kiln-03.0. Serve heroes.js and abilities.js with the matching match.js, protocol.js and client; refresh older tabs together. Older recordings require their original build.

@@ -31,7 +31,7 @@
         <canvas
           width="960"
           height="440"
-          aria-label="Kiln Yard. Move with A and D, jump with W, dash with Shift, fire with J, and use K for a shock attack."
+          aria-label="Kiln Yard. Move with A and D, jump with W, dash with Shift, fire with J, and use Q E R F for abilities."
         ></canvas>
         <section class="panel" id="panel" aria-labelledby="headline">
           <div class="panel-body">
@@ -91,11 +91,6 @@
           ><strong id="dash">Ready</strong>
           <div class="meter"><i id="dashFill"></i></div>
         </div>
-        <div class="readout">
-          <small>SHOCK <kbd>K</kbd></small
-          ><strong id="pulse">Ready</strong>
-          <div class="meter amber"><i id="pulseFill"></i></div>
-        </div>
         <div class="rig">
           <small id="status">RIG 0/6 · NEXT 12</small><strong id="scrap">0 scrap</strong>
           <div class="mods">
@@ -108,14 +103,18 @@
           </div>
         </div>
       </section>
+      <section class="ability-bar" aria-label="Hero abilities">
+        <button id="ability0"></button><button id="ability1"></button>
+        <button id="ability2"></button><button id="ability3"></button>
+      </section>
       <div class="match-guidance">
         <span id="buildHint"></span><span id="teamSignal" role="status"></span>
       </div>
       <p id="fieldTip" class="field-tip" hidden></p>
       <div class="quick-keys">
         <span><kbd>A D</kbd> move</span><span><kbd>W</kbd> jump</span><span><kbd>S</kbd> drop</span
-        ><span><kbd>Shift</kbd> dash</span><span><kbd>J</kbd> fire</span
-        ><span><kbd>K</kbd> ability</span><span><kbd>Tab</kbd> score</span
+        ><span><kbd>Shift</kbd> dash</span><span><kbd>J</kbd> attack</span
+        ><span><kbd>Q E R F</kbd> abilities</span><span><kbd>C</kbd> bridge</span><span><kbd>Tab</kbd> score</span
         ><span><kbd>G / H</kbd> rally / retreat</span>
       </div>
       <details class="guide">
@@ -127,9 +126,8 @@
             decks, fast-falls, or slides on the ground at speed. Jump out of a slide to keep moving.
           </p>
           <p>
-            <b>Attack &amp; protect</b><br />Hold J for assisted fire or aim with the left mouse
-            button. Hold fire and dash for a shoulder strike. K or right-click pulses on the ground
-            or dives from the air. The Warden also shields nearby allies.
+            <b>Attack &amp; protect</b><br />Hold J for assisted basic attacks or aim with the left mouse
+            button. Hold fire and dash for a shoulder strike. Q/E/R/F use your four abilities. K or right-click also uses Q. Melee heroes strike close targets; ranged heroes shoot. Hover an ability for its purpose and counterplay. C opens a nearby bridge switch.
           </p>
           <p>
             <b>Farm &amp; siege</b><br />Finish crawlers for bonus scrap and collect the glowing
@@ -142,10 +140,12 @@
         </div>
       </details>
       <footer>
-        <span>RIVET RUSH &nbsp;/&nbsp; FIELD BUILD 02</span
+        <span>RIVET RUSH &nbsp;/&nbsp; FIELD BUILD 03</span
         ><span>DESKTOP · KEYBOARD + OPTIONAL MOUSE</span>
       </footer>
     </main>
+    <script src="heroes.js"></script>
+    <script src="abilities.js"></script>
     <script src="match.js"></script>
     <script src="protocol.js"></script>
     <script src="replay.js"></script>

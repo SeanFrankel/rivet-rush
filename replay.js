@@ -4,7 +4,7 @@
 const RivetReplay = (() => {
   const wire = typeof module !== "undefined" ? require("./protocol") : RivetWire;
   const yard = typeof module !== "undefined" ? require("./match") : Yard;
-  const rules = "kiln-02.5";
+  const rules = "kiln-03.0";
   const stride = wire.maxMask + 1;
   const limit = 60 * 420;
   function inputCode(input) {

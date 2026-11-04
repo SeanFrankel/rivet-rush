@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, "..");
 const staticFiles = new Map([
   ["/", ["index.html", "text/html"]],
   ["/index.html", ["index.html", "text/html"]],
-  ...["match.js", "protocol.js", "replay.js", "online.js", "yard.js", "sound.js"].map((name) => [
+  ...["heroes.js", "abilities.js", "match.js", "protocol.js", "replay.js", "online.js", "yard.js", "sound.js"].map((name) => [
     "/" + name,
     [name, "text/javascript"],
   ]),

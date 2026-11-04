@@ -188,6 +188,13 @@ test("the Warden can complete all three training drills using normal inputs", as
   await page.keyboard.press("w");
   await page.waitForTimeout(130);
   await page.keyboard.press("k");
+  await page.waitForFunction(() => (match.player.castMask & 1) !== 0);
+  await page.waitForFunction(() => !match.player.slamming && match.player.recovery <= 0);
+  for (const [slot, key] of ["e", "r", "f"].entries()) {
+    await page.keyboard.press(key);
+    await page.waitForFunction(slot => (match.player.castMask & (1 << (slot + 1))) !== 0, slot);
+    await page.waitForFunction(() => match.player.dashLeft === 0);
+  }
   await expect.poll(() => page.evaluate(() => lesson)).toBe(3);
   await expect(page.locator("#pilotName")).toHaveText("KILN WARDEN");
 });
@@ -246,7 +253,7 @@ test("the movement course can be finished on the real map and restarted", async 
         y,
       );
       if (stage === 1) {
-        await page.keyboard.press("e");
+        await page.keyboard.press("c");
         await page.waitForFunction(() => match.bridge > 0);
       }
     } else {
@@ -257,3 +264,22 @@ test("the movement course can be finished on the real map and restarted", async 
   await page.getByRole("button", { name: "Race again" }).click();
   expect(await page.evaluate(() => [trial.gate, trial.start])).toEqual([0, null]);
 });
+
+for (const kit of ["runner", "warden", "vesper", "rook", "fuse", "echo"]) {
+  test(kit + " can select and cast four abilities through keyboard controls", async ({ page }) => {
+    const errors = []; page.on("pageerror", error => errors.push(error.message));
+    await page.goto("/");
+    await expect(page.locator("#kits button")).toHaveCount(6);
+    await page.locator('[data-kit="' + kit + '"]').click();
+    await page.getByRole("button", { name: "Training deck" }).click();
+    for (const [slot, key] of ["q", "e", "r", "f"].entries()) {
+      await page.keyboard.press(key);
+      await page.waitForFunction(slot => (match.player.castMask & (1 << slot)) !== 0, slot);
+      await expect(page.locator("#ability" + slot)).not.toHaveText("");
+      await page.waitForFunction(() => match.player.dashLeft === 0 && !match.player.slamming && match.player.recovery <= 0);
+    }
+    expect(await page.evaluate(() => match.player.kit)).toBe(kit);
+    expect(errors).toEqual([]);
+    if (kit === "fuse") await page.screenshot({ path: ".tmp/roster-gameplay.png" });
+  });
+}

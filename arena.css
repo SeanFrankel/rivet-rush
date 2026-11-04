@@ -504,7 +504,7 @@ footer {
 }
 @media (min-width: 800px) and (min-height: 600px) {
   body.playing main {
-    width: min(1280px, 100%, calc((100dvh - 300px) * 2.1818 + 50px));
+    width: min(1280px, 100%, calc((100dvh - 360px) * 2.1818 + 50px));
     padding-top: 12px;
     padding-bottom: 12px;
   }
@@ -537,3 +537,11 @@ footer {
     font-size: 10px;
   }
 }
+
+.console { grid-template-columns: 1fr 1fr 1.5fr; }
+.ability-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.ability-bar button { font: 11px Consolas, monospace; min-height: 44px; color: var(--white); background: #152431; border: 1px solid #79b9ab; border-radius: 3px; padding: 5px; }
+.ability-bar button:disabled { opacity: .55; }
+.kit-picker { display: grid; grid-template-columns: repeat(3, 1fr); }
+.panel-body { max-height: 100%; overflow-y: auto; }
+@media (max-width: 700px) { .ability-bar { grid-template-columns: repeat(2, 1fr); } }

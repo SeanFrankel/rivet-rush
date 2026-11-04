@@ -4,7 +4,7 @@ A side-scrolling MOBA for up to four pilots. Farm crawlers for scrap, build your
 
 ## Play on your computer
 
-Download or clone this repository, open `index.html` in a desktop browser, pick **Arc Runner** or **Kiln Warden**, then select **Play skirmish**. You control one pilot. Bots fill the other seats. **Crew size** switches between 1v1 and 2v2. **Training deck** teaches a double jump, dash strike and aerial finisher. **Movement run** times you across six checkpoints on the same map and keeps a personal best per pilot on this device. R restarts a run.
+Download or clone this repository, open `index.html` in a desktop browser, pick one of [six heroes](docs/characters.md), then select **Play skirmish**. You control one pilot. Bots fill the other seats. **Crew size** switches between 1v1 and 2v2. **Training deck** teaches a double jump, dash strike and all four abilities. **Movement run** times you across six checkpoints on the same map and keeps a personal best per pilot on this device. R restarts a run.
 
 ## Play with friends
 
@@ -23,11 +23,11 @@ Open [the local game](http://127.0.0.1:8080), choose **Private room**, select a 
 | --- | --- |
 | Run, jump twice, drop through a platform or fast-fall | A/D steers. Tap W for a short hop or hold it for height. S drops through decks or slides on the ground at speed. Arrows and Space also work. |
 | Dash through a projectile or commit to a shoulder strike | Shift dashes. Jump during a clean dash to carry speed. Hold fire and dash to strike. |
-| Fire the gauntlet | Hold J for assisted forward fire. Left mouse aims and fires toward the pointer. |
-| Use your pilot ability | K or right-click. From the air, the attack lands as a dive. Warden also shields allied pilots and crawlers. |
+| Basic attack | Hold J for a forward melee swing or assisted ranged fire. Left mouse aims attacks toward the pointer. |
+| Four hero abilities | Q / E / R / F. K or right-click also uses Q. Point into the arena to aim skills, or keep the pointer outside for assisted aim. Hover the ability bar for descriptions. |
 | Buy a mod | 1 for rivets, 2 for the drive, 3 for coils. The rig shows the next scrap price. |
 | Signal your crew | G rallies, H calls a retreat. Point inside the arena to mark a location, or move the cursor outside it to mark your pilot. Signals last five seconds, with a three-second cooldown. Bots keep their own plans. |
-| Operate a crossing, check the score, open the menu | E by either upper switch, hold Tab, Escape. |
+| Operate a crossing, check the score, open the menu | C by either upper switch, hold Tab, Escape. |
 
 Walk with your first crawler wave. Land the finishing shot on enemy crawlers for bonus scrap, then collect the dropped salvage before an opponent takes it. Use a friendly Breaker to push the sentry. Fall back near your reactor to repair. After the enemy sentry falls, finish its reactor. At five minutes both reactors enter meltdown. Escort a Breaker past midfield to earn a charged base shot. A pilot or NPC still has to deliver the final hit. If both bases hold for seven minutes, the match is a draw.
 
@@ -38,3 +38,5 @@ Your rig shows each mod track's purchased tiers and what the next mod costs. Las
 For a bug or playtest observation, open **Field menu → Save playtest report**, or save it at the result screen. The JSON contains match/build information and scores, with blank observation fields you can fill in. It excludes room invitations and seat secrets and sends nothing automatically. Pair it with a replay when possible. Tactical signals are live communication and are not included in replays.
 
 The [game handbook](docs/README.md) contains the rules, test procedures and beta roadmap. Contributors should start with [AGENTS.md](AGENTS.md). Third-party licenses and asset provenance are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+Three melee heroes (Warden, Rook, Echo) specialize in protection, displacement and flanking. Three ranged heroes (Runner, Vesper, Fuse) specialize in aerial pursuit, precision and traps. All retain double jump and the shared Shift dash. The [character guide](docs/characters.md) describes each kit, combo and counterplay. Current art remains placeholder; the proposed art direction awaits owner review.

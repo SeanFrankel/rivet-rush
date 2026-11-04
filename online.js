@@ -182,7 +182,7 @@ class RivetRoom {
     const source = this.state.units.find((u) => u.seat === this.seat);
     const previousDisplay = fresh ? null : this.game?.player;
     const estimate = fresh ? null : this.predicted;
-    this.predicted = { ...source, struck: [...source.struck] };
+    this.predicted = { ...source, struck: [...source.struck], cooldowns: [...source.cooldowns], anchor: source.anchor ? {...source.anchor} : null };
     this.history = this.history.filter((h) => h.seq > msg.ack[this.seat]);
     for (const h of this.history) Yard.predictPilot(this.state, this.predicted, h.input);
     this.lastCorrection =
@@ -237,6 +237,9 @@ class RivetRoom {
         view.grounded = this.predicted.grounded;
         view.slideLeft = this.predicted.slideLeft;
         view.vx = this.predicted.vx;
+        view.anchor = this.predicted.anchor;
+        view.skillDash = this.predicted.skillDash;
+        view.skillEvade = this.predicted.skillEvade;
       } else if (prev && prev.hp && next.hp && Math.abs(prev.x - next.x) < 120) {
         view.x = prev.x + (next.x - prev.x) * alpha;
         view.y = prev.y + (next.y - prev.y) * alpha;

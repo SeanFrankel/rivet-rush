@@ -1,6 +1,8 @@
 "use strict";
 
 const Yard = (() => {
+  const heroes = typeof module !== "undefined" ? require("./heroes") : RivetHeroes;
+  const abilityEngine = typeof module !== "undefined" ? require("./abilities") : RivetAbilities;
   const width = 1780;
   const floor = 345;
   const stepSeconds = 1 / 60;
@@ -69,34 +71,7 @@ const Yard = (() => {
       radius: 23,
     },
   };
-  const kits = {
-    runner: {
-      name: "Arc Runner",
-      role: "Skirmisher",
-      max: 150,
-      speed: 205,
-      range: 248,
-      damage: 10,
-      rate: 0.26,
-      jumpSpeed: 450,
-      burstSpeed: 585,
-      recharge: 2.1,
-      lungeDamage: 25,
-    },
-    warden: {
-      name: "Kiln Warden",
-      role: "Vanguard",
-      max: 190,
-      speed: 179,
-      range: 203,
-      damage: 14,
-      rate: 0.39,
-      jumpSpeed: 436,
-      burstSpeed: 465,
-      recharge: 2.6,
-      lungeDamage: 29,
-    },
-  };
+  const kits = heroes.profiles;
   const dashDuration = 0.18;
   const slamWindup = 0.15;
   const sentryWindup = 0.42;
@@ -108,6 +83,7 @@ const Yard = (() => {
   const distance = (u, other) => Math.hypot(other.x - u.x, middle(other) - middle(u));
   const mirror = (team, x) => (team === 0 ? x : width - x);
   const approach = (value, amount) => Math.max(0, value - amount);
+  const abilities = abilityEngine.create({ heroes, effect, note, middle, distance, width, floor });
 
   function addUnit(m, kind, team, spawn) {
     const config = stats[kind];
@@ -130,6 +106,8 @@ const Yard = (() => {
       damagedAt: -10,
       barrier: 0,
       barrierTime: 0,
+      slow: 1,
+      slowTime: 0,
     };
     m.units.push(u);
     return u;
@@ -160,6 +138,16 @@ const Yard = (() => {
       lunge: false,
       struck: [],
       pulse: 0,
+      cooldowns: [0, 0, 0],
+      castMask: 0,
+      anchor: null,
+      skillDash: false,
+      skillEvade: false,
+      skillDashSpeed: 0,
+      skillDashVy: null,
+      skillDashDamage: 0,
+      skillDashForce: 0,
+      skillDashLift: 0,
       slamming: false,
       windup: 0,
       recovery: 0,
@@ -235,6 +223,8 @@ const Yard = (() => {
       bridge: 0,
       drops: [],
       mortars: [],
+      zones: [],
+      delayed: [],
       winner: null,
       endReason: null,
       neutralAt: 48,
@@ -556,7 +546,9 @@ const Yard = (() => {
     const firing = k.fire || k.fireTap;
     const axis = Number(!!k.right) - Number(!!k.left);
     u.moving = axis !== 0;
-    u.spawnGuard = firing || k.pulse ? 0 : approach(u.spawnGuard, dt);
+    u.spawnGuard = firing || k.pulse || k.skill2 || k.skill3 || k.ultimate ? 0 : approach(u.spawnGuard, dt);
+    u.cooldowns = u.cooldowns.map((value) => approach(value, dt));
+    if (u.anchor && (u.anchor.left -= dt) <= 0) u.anchor = null;
     for (const key of [
       "dash",
       "pulse",
@@ -590,7 +582,9 @@ const Yard = (() => {
       u.windup = approach(u.windup, dt);
       u.vy = u.windup > 0 ? 0 : 740;
     } else if (u.recovery <= 0) {
-      if (k.dash && u.dash <= 0) {
+      if (k.dash && u.dash <= 0 && u.dashLeft <= 0) {
+        u.skillDash = false;
+        u.skillEvade = false;
         u.dash = kit.recharge - 0.25 * u.driveRank;
         u.dashLeft = dashDuration;
         u.dashDir = u.dir;
@@ -617,16 +611,7 @@ const Yard = (() => {
         u.vy = Math.max(u.vy, -185);
         u.canShortHop = false;
       }
-      if (k.pulse && u.pulse <= 0 && u.dashLeft <= 0) {
-        u.pulse = (u.kit === "warden" ? 6 : 4) - u.coilRank * 0.2;
-        if (u.grounded) actions.push({ type: "pulse", u });
-        else {
-          u.slamming = true;
-          u.windup = slamWindup;
-          u.vy = 0;
-          effect(m, "prime", u, 25, slamWindup);
-        }
-      }
+      abilities.tryCast(m, u, k, actions);
     }
 
     const dashing = u.dashLeft > 0;
@@ -648,8 +633,8 @@ const Yard = (() => {
       effect(m, "slide", u, 24, 0.22, u.y);
     }
     if (dashing) {
-      u.vx = u.dashDir * kit.burstSpeed;
-      u.vy = 0;
+      u.vx = u.dashDir * (u.skillDash ? u.skillDashSpeed : kit.burstSpeed);
+      u.vy = u.skillDash ? (u.skillDashVy ?? u.vy) : 0;
     } else {
       if (axis * u.vx < 0) {
         u.slideLeft = 0;
@@ -657,7 +642,7 @@ const Yard = (() => {
         // External knockback and a committed attack still have their full effect.
         if (!u.slamming && u.recovery <= 0) u.vx = axis * Math.min(50, Math.abs(u.vx));
       }
-      let target = axis * u.speed;
+      let target = axis * u.speed * (u.slow || 1);
       if (u.slamming || u.recovery > 0) target *= 0.24;
       let acceleration = u.grounded ? 2600 : 1550;
       if (!u.grounded && !axis) acceleration = Math.abs(u.vx) > u.speed * 1.04 ? 180 : 680;
@@ -674,7 +659,7 @@ const Yard = (() => {
     if (dashing) {
       if (u.lunge) actions.push({ type: "lunge", u });
       u.dashLeft = approach(u.dashLeft, dt);
-      if (u.dashLeft === 0) u.vx = u.dashDir * u.speed * 1.48;
+      if (u.dashLeft === 0 && !u.skillDash) u.vx = u.dashDir * u.speed * 1.48;
     } else if (u.slamming && u.grounded && u.windup <= 0) {
       u.slamming = false;
       u.recovery = 0.21;
@@ -693,6 +678,17 @@ const Yard = (() => {
     if (u.botThink > 0) return u.botOrder;
     u.botThink = 0.19 + Math.floor(u.seat / 2) * 0.026;
     const target = targetFor(m, u, 315);
+    const skillOrders = {};
+    for (const [slot, key] of [[1, "skill2"], [2, "skill3"], [3, "ultimate"]]) {
+      const skill = heroes.skills[u.kit][slot];
+      const gap = target ? distance(u, target) : Infinity;
+      if (u.anchor && slot === 1) skillOrders[key] = u.hp < u.max * .45;
+      else if (abilities.cooldown(u, slot) <= 0) {
+        skillOrders[key] = skill.intent === "defense" ? !!target && u.hp < u.max * .7
+          : skill.intent === "mobility" ? !!target && gap > u.range * .7 && gap < skill.range
+          : !!target && gap <= skill.range && (slot < 3 || target.kind === "pilot" || target.kind === "sentry");
+      }
+    }
     const advance = u.team === 0 ? 1 : -1;
     const build =
       u.kit === "warden"
@@ -718,6 +714,7 @@ const Yard = (() => {
       return {
         ...u.botOrder,
         ...purchase,
+        ...skillOrders,
         dash: travel && !target && u.dash <= 0,
       };
     }
@@ -747,13 +744,14 @@ const Yard = (() => {
       return {
         ...u.botOrder,
         ...purchase,
+        ...skillOrders,
         jump: jumping && (u.grounded || (u.jumps === 1 && u.vy > -90)),
         pulse: !!keeper && u.grounded && Math.abs(u.x - keeper.x) < 80 && u.y <= 155,
       };
     }
     const dx = target ? target.x - u.x : advance * 400;
     const direction = Math.sign(dx) || u.dir;
-    const spacing = u.seat < 2 ? 140 : 91;
+    const spacing = Math.min(u.seat < 2 ? 140 : 91, u.range * .7);
     const drive = Math.abs(dx) > spacing || (target && u.dir !== direction);
     const order = {
       left: drive && direction < 0,
@@ -772,6 +770,7 @@ const Yard = (() => {
     return {
       ...order,
       ...purchase,
+      ...skillOrders,
       pulse: near && u.pulse <= 0,
       jump:
         u.grounded && (aimingSentry || (opponent && (target.y < u.y - 25 || (u.hp < 78 && near)))),
@@ -784,6 +783,11 @@ const Yard = (() => {
     Object.assign(u, {
       recentHits: [],
       recap: [],
+      anchor: null,
+      skillDash: false,
+      skillEvade: false,
+      slow: 1,
+      slowTime: 0,
       x: mirror(u.team, u.spawn),
       y: floor,
       hp: u.max,
@@ -828,7 +832,8 @@ const Yard = (() => {
         (u.kind === "keeper" && !shot.upperShot)
       )
         continue;
-      if (u.kind === "pilot" && u.dashLeft > 0.065 && !u.lunge) continue;
+      if (shot.hitIds?.includes(u.id)) continue;
+      if (u.kind === "pilot" && u.dashLeft > 0.065 && (u.skillDash ? u.skillEvade : !u.lunge)) continue;
       const radius = stats[u.kind].radius;
       const x1 = u.x - radius - shot.x,
         x2 = u.x + radius - shot.x;
@@ -876,17 +881,25 @@ const Yard = (() => {
       hits = [];
     for (const u of m.units) {
       if (u.hp <= 0) continue;
-      if (u.kind === "pilot") orders.set(u, inputs[u.seat] ?? botInput(m, u, dt));
+      if (u.kind === "pilot") {
+        const input = inputs[u.seat] ?? botInput(m, u, dt);
+        orders.set(u, { ...input, skillAim: abilities.aim(m, u, input) });
+      }
       else if (u.kind !== "sentry" && u.kind !== "keeper") orders.set(u, targetFor(m, u, u.range));
     }
     for (const u of m.units) {
       u.cd -= dt;
       u.flash = approach(u.flash, dt);
       u.barrierTime = approach(u.barrierTime, dt);
+      u.slowTime = approach(u.slowTime, dt);
+      if (u.slowTime === 0) u.slow = 1;
       if (u.barrierTime === 0) u.barrier = 0;
       u.knock *= Math.max(0, 1 - 7 * dt);
       if (!u.hp) {
-        if (u.kind === "pilot" && (u.respawn -= dt) <= 0) respawn(u);
+        if (u.kind === "pilot") {
+          u.cooldowns = u.cooldowns.map((value) => approach(value, dt));
+          if ((u.respawn -= dt) <= 0) respawn(u);
+        }
         continue;
       }
       if (u.kind === "pilot") {
@@ -940,7 +953,7 @@ const Yard = (() => {
           actions.push({ type: "auto", u, target });
         } else {
           u.dir = u.team === 0 ? 1 : -1;
-          u.x = limitX(u.x + u.dir * u.speed * dt);
+          u.x = limitX(u.x + u.dir * u.speed * (u.slow || 1) * dt);
         }
         if (u.kind === "crawler" || u.kind === "breaker") {
           u.x = limitX(u.x + u.knock * dt);
@@ -961,10 +974,15 @@ const Yard = (() => {
           fireAt(m, u, action.target);
           break;
         case "aim":
-          fire(m, u, u.x + Math.cos(action.angle), middle(u) + Math.sin(action.angle));
+          if (kits[u.kit]?.attackType === "melee") abilities.melee(m, u, hits, action.angle);
+          else fire(m, u, u.x + Math.cos(action.angle), middle(u) + Math.sin(action.angle));
           break;
         case "rivet":
-          fireAt(m, u, targetFor(m, u, u.range, true));
+          if (kits[u.kit].attackType === "melee") abilities.melee(m, u, hits);
+          else fireAt(m, u, targetFor(m, u, u.range, true));
+          break;
+        case "hero":
+          abilities.resolve(m, action, hits);
           break;
         case "pulse":
         case "slam":
@@ -983,34 +1001,40 @@ const Yard = (() => {
             if (other.kind === "pilot") u.lungesLanded++;
             hits.push({
               target: other,
-              damage: kits[u.kit].lungeDamage,
+              damage: u.skillDash ? u.skillDashDamage : kits[u.kit].lungeDamage,
               source: u,
               dir: u.dashDir,
-              force: 240,
-              lift: 175,
+              force: u.skillDash ? u.skillDashForce : 240,
+              lift: u.skillDash ? u.skillDashLift : 175,
             });
             effect(m, "strike", other, 24, 0.22);
           }
           break;
       }
     }
+    abilities.step(m, dt, hits);
     for (const shot of m.shots) {
-      const travel = Math.min(dt, shot.left / 600);
+      const speed = Math.hypot(shot.vx, shot.vy) || 600;
+      const travel = Math.min(dt, shot.left / speed);
       const dx = shot.vx * travel,
         dy = shot.vy * travel;
-      const victim = intercept(shot, m.units, dx, dy);
-      shot.x += dx;
-      shot.y += dy;
-      shot.left -= 600 * dt;
-      if (victim) {
+      let victim;
+      while (shot.left > 0 && (victim = intercept(shot, m.units, dx, dy))) {
         const damage = shot.siege && victim.speed === 0 ? shot.damage * 3 : shot.damage;
+        const source = m.units.find((u) => u.id === shot.source);
         hits.push({
           target: victim,
           damage,
-          source: m.units.find((u) => u.id === shot.source),
+          source,
+          dir: shot.pull ? Math.sign((source?.x ?? shot.x) - victim.x) || 1 : Math.sign(shot.vx) || 1,
+          force: shot.force || 0,
+          lift: shot.lift || 0,
         });
-        shot.left = 0;
+        if (shot.pierce > 0 && victim.speed > 0) {
+          shot.pierce--; shot.hitIds.push(victim.id);
+        } else shot.left = 0;
       }
+      shot.x += dx; shot.y += dy; shot.left -= speed * dt;
     }
     for (const h of hits) {
       hit(m, h.target, h.damage, h.source);
@@ -1100,8 +1124,12 @@ const Yard = (() => {
       shots: [],
       serial: 0,
       bridge: state.bridge,
+      zones: [],
+      delayed: [],
     };
     pilot.knock *= 1 - 7 * stepSeconds;
+    pilot.slowTime = approach(pilot.slowTime, stepSeconds);
+    if (pilot.slowTime === 0) pilot.slow = 1;
     pilotStep(
       local,
       pilot,
@@ -1116,6 +1144,8 @@ const Yard = (() => {
     height,
     stats,
     kits,
+    skills: heroes.skills,
+    skillCooldown: abilities.cooldown,
     upgradeCost,
     create,
     createTraining,

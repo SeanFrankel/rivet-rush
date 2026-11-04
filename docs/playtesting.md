@@ -62,3 +62,9 @@ Start with two short matches using swapped crews. Observe whether a signal produ
 The [teamplay engineering record](playtests/2026-11-03-teamplay.md) tracks implementation and automated checks. It does not replace these observations. Export the playtest report and replay from the tested build, fill the report's observation fields, and attach anonymous findings to a session record.
 
 Future art experiments use the audience and readability checks in the [design and art principles proposal](art-direction.md), after owner review. Current mechanics sessions retain the existing art and assets. Do not treat proposed art-test thresholds as measured results or as replacements for the MOBA fun gates.
+
+## Six-hero melee/ranged iteration
+
+Use the [character guide](characters.md) for engage, counterplay and team-role experiments. The owner requested three melee and three ranged heroes, each with four abilities. Prioritize enjoyable movement into a meaningful MOBA decision: farm, protect, contest, push or reset. Test both sides of each matchup before changing reach or cooldowns; track whether closing distance creates an opening and whether defenders can meaningfully answer it. Keep current art and basic mods during this iteration. Automated cast/prediction checks are not evidence of enjoyment.
+
+[Six-hero implementation and checks](playtests/2026-11-03-roster.md) records the current evidence and next matchup session.
