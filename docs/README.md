@@ -9,7 +9,7 @@
 | Decide whether a mechanic earns its place | [Design research and playtesting](playtesting.md) | Sources, hypotheses, session script and decision criteria |
 | Review or change artistic direction | [Design and art principles](art-direction.md) | Central proposal awaiting owner review: world, visual/audio language, audience hypothesis, asset contracts and acceptance tests |
 | Change the code or verify a build | [Implementation and verification](verification.md) | Boundaries, commands, smoke tests and coverage gaps |
-| Plan a release or check the next milestone | [Product roadmap](roadmap.md) | Proposed scope, dependencies, release gates and cuts |
+| Make a lead-designer decision or plan a release | [Product roadmap](roadmap.md) | D1–D8 design decisions, O1–O3 operational permissions, recommendations, dependencies and release gates |
 | Host a session for friends or restore a build | [Hosting guide](hosting.md) | Local, LAN and internet staging, room lifecycle and recovery |
 | Keep a change documented | [Update matrix](updating.md) | Ownership, destinations, timing and review examples |
 | Reuse code or art | [Third-party notices](../THIRD_PARTY.md) | Upstream provenance and licenses |

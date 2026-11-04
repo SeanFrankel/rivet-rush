@@ -2,7 +2,7 @@
 
 **Decision requested at the finish line:** Can the host send a private link to four friends on different home networks, step away, and have them play, finish and rematch a fair 2v2? Can a second operator diagnose a failed match and safely restore the last good build? Both outcomes are required to open the beta.
 
-**Release status.** The repository now contains offline skirmishes and four-seat, server-authoritative private rooms. The implementation includes six distinct pilots, lane farming, a neutral siege objective, upgrades and a reactor finish. The local room and network drills provide engineering evidence. Internet staging and independent human playtests are still required. Use the [game rules](gameplay.md) for shipped behavior and the [verification guide](verification.md) to repeat the checks.
+**Release status.** The repository now contains offline skirmishes and four-seat, server-authoritative private rooms. The implementation includes six distinct pilots, three selectable arenas with siege, capture and supply objectives, lane farming, upgrades and a reactor finish. The local room and network drills provide engineering evidence. Internet staging and independent human playtests are still required. Use the [game rules](gameplay.md) for shipped behavior and the [verification guide](verification.md) to repeat the checks.
 
 ## Product contract
 
@@ -12,9 +12,121 @@ The reason to play with a friend is the fight around a wave. A Warden can shield
 
 Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, additional arenas beyond the three and pilot kits beyond the six. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
 
+## Lead-designer decision register
+
+**Status · 2026-11-03: recommendations awaiting the owner's decisions.** Adding these questions to the roadmap does not approve the recommendations, grant new spending/publication authority, or require reconfirmation of work already authorized. The owner is lead game designer. Agents own implementation and reversible iteration within the agreed boundaries.
+
+A decision belongs here when it changes the intended player experience, creates expensive downstream commitments, or resolves a value judgment that tests alone cannot settle. A reversible implementation choice belongs with the implementing agent. A question about whether a mechanic actually works or feels good becomes a playtest, not an arbitrary preference poll.
+
+**Already established by the owner:** movement-driven 2D MOBA; farming NPCs, live opponents, teammates, distinct heroes and abilities; secondary objectives supporting destruction of the enemy base; six heroes with four active abilities each and a melee/ranged mix; three distinct maps. Keep current art while the art proposal awaits review. Simple shop mechanics are acceptable for now. Prioritize enjoyable core play over premature performance investigation. These are working constraints, not questions to reopen without a concrete reason.
+
+### Decisions to resolve before committing to the full beta scope
+
+#### D1 · Who is the primary player, and what should bring them back?
+
+**Owner choice:** prioritize mixed-experience friend groups learning together, practiced platform-fighter players seeking mechanical mastery, or established MOBA teams seeking deep strategic optimization. All may enjoy the game, but they cannot all determine onboarding and balance priorities equally.
+
+**Recommendation:** make small friend groups the first audience, with easy entry and substantial movement mastery. The promise is “moving feels great, and coordinating around a wave changes the match.” Keep mastery in execution and team decisions rather than requiring extensive item memorization before contributing.
+
+**Why this matters:** accessibility is about getting a player into meaningful decisions; depth is about those decisions retaining value with practice. Choosing an audience helps distinguish an appropriately demanding interaction from unnecessary friction. It also determines how to interpret conflicting feedback from beginners and experts.
+
+**Evidence / timing:** decide before onboarding and balance targets are frozen (W1/W5). Observe both a newcomer and an experienced player explaining a setback and demonstrating an alternative. Ask whether they voluntarily want another round. Revise the recommendation if accessibility removes the expressive play experienced testers value, or newcomers cannot contribute after learning the basic loop.
+
+#### D2 · What is the match format and desired dramatic arc?
+
+**Owner choice:** confirm 2v2 as the first release's main format, and choose compact repeated skirmishes versus longer matches with a more pronounced farming/late-game arc. This is a product commitment; the current 2v2 implementation alone is not evidence it is the ideal final format.
+
+**Recommendation:** retain 2v2, six heroes and three maps for the friends beta; keep 1v1 as practice/optional play. Aim initially for roughly 5–7-minute completed matches with multiple wave decisions and a decisive finish. This is a proposed pacing hypothesis, not an approved target or measured result. The current simulation starts meltdown at five minutes and draws at seven: an eight-minute match target would require changing those rules.
+
+**Why this matters:** adding a third teammate changes map occupancy, team roles, effect density, recovery time and how much one player can influence the result. Longer matches also change the value of farming, upgrades and deaths. They are not simple capacity or timer changes.
+
+**Evidence / timing:** resolve before map/role scope is frozen (W2/W5). Record time to first meaningful fight, objective windows, deaths, travel downtime, match length and whether a won encounter leads to base pressure. Review both crews, early stomps and drawn matches. Adjust the timer only after diagnosing why matches stall or end too abruptly.
+
+#### D3 · What should win a fight, and what must the defender be able to do?
+
+**Owner choice:** set the priority among aim precision, movement/spacing, ability combinations and team setup. Specify whether long committed combos and extended loss of control fit the intended game. Confirm the accessibility role of assisted keyboard attacks relative to mouse aim.
+
+**Recommendation:** movement, spacing and coordinated setup lead; aiming and combos reward mastery within that framework. Preserve useful keyboard-assisted attacks, but do not assume their parity with mouse aim is proven. Strong displacement or burst should offer an understandable answer through a tell, range restriction, commitment or recovery. Avoid extended chains that deny the defender a meaningful opportunity to act. Melee should have viable approaches and ranged should have viable spacing answers, rather than either archetype winning by default.
+
+**Why this matters:** an impressive sequence for its user can be an uninteresting death for its target. The designer sets acceptable agency and commitment; agents tune exact damage, cooldowns, cancel windows and assistance within that contract. Do not impose a universal time-to-kill number before observing real pairings and wave interference.
+
+**Evidence / timing:** resolve the contract before deeper combat tuning (W1/W5). In swapped melee/ranged matchups and both input methods, record successful approaches, successful escapes, unavoidable-looking chains and whether a losing player can identify and execute a response. Proposed numerical limits should emerge from those observations, not another game's values.
+
+#### D4 · How much power should farming buy, and how can a losing crew recover?
+
+**Owner choice:** should a farm lead primarily provide a modest advantage in otherwise contestable fights, or create a large power gap that requires avoiding combat? Should last hitting be a demanding individual resource contest or an execution bonus on top of shared team income?
+
+**Recommendation:** keep team income with meaningful last-hit/pickup bonuses and a small match-local shop. A farm lead should help win the next decision without routinely deciding the entire match. Preserve ways to recover through a punished overcommitment, a contested pickup/objective, or a well-defended push. Avoid automatic equalization that erases successful play. Defer permanent combat-power unlocks.
+
+**Why this matters:** too little reward disconnects farming from the MOBA loop; too much makes a movement-focused fight irrelevant after an early mistake. Easy recovery can also erase the satisfaction of earning a lead. This is an intended advantage curve, not a request for the owner to set every item price.
+
+**Evidence / timing:** decide before expanding the shop/progression (W5). Compare fights at different earned upgrade leads, record whether disadvantaged crews have credible choices, and inspect both comebacks and games where the leader closes cleanly. Agent-owned experiments may tune payouts and upgrade values; a shift to a large item catalog or individual-only economy requires a recorded scope decision.
+
+#### D5 · Where should strategic depth come from?
+
+**Owner choice:** prioritize visible wave/objective rotations and flexible pairings, or introduce additional information and composition systems such as fog of war, wards, drafts/bans, hard role requirements and several lanes.
+
+**Recommendation:** get depth from timing, elevation, wave protection, objective commitments and complementary hero choices first. Keep battlefield state observable through the existing camera/minimap model; defer fog/wards and compulsory role or draft systems. Each secondary objective should create an opportunity cost and an opponent response, rather than becoming a mandatory chore every spawn. Preserve the base as the win condition.
+
+**Why this matters:** each additional system consumes attention and teaching time. In a small 2v2 roster, mandatory healer/tank pairings or severe hard counters can remove meaningful selection freedom. We should establish whether existing interactions yield repeatable depth before layering on more systems.
+
+**Evidence / timing:** resolve before new macro systems or selection rules (W2/W5). Watch an escort, a rotation and an opponent punishing that rotation on each arena. Compare several pairings and let testers choose a rematch map. Reopen this decision if competent players repeatedly identify only one viable route, pairing or plan despite focused tuning.
+
+### Decisions needed at later production gates
+
+#### D6 · What artistic identity and tone should the game commit to?
+
+**Owner choice:** approve, edit or reject the [Brightwork art proposal](art-direction.md), including its tone and the relationship between hero fantasy, silhouettes, environments and sound.
+
+**Recommendation:** review a small comparable gameplay visual slice before approving broad asset production. Require readable teams, facing, hit areas and major threats; spectacle must remain compatible with those requirements. Preserve the current assets until approval. This is a creative choice the agent should not infer from prototype placeholders.
+
+**Evidence / timing:** required before commissioning or producing the full art set, not before mechanics iteration. Evaluate normal-speed crowded combat at actual play size, not only attractive stills. Record approval/edits in the art document, linked here. Style approval does not authorize spending by itself.
+
+#### D7 · What is the first release, and what level of finish earns its name?
+
+**Owner choice:** distinguish an invite-only friends beta from a publicly discoverable early-access product or a full commercial release. Confirm the first supported platform/input contract and what remains explicitly out of scope.
+
+**Recommendation:** first deliver a reliable desktop-browser friends beta on keyboard/mouse, with private invitations, practice, bots, reconnects, rematches, understandable onboarding and accessible feedback. Defer native/Steam packaging, controller/mobile, public matchmaking, ranked play and public chat until a separate scope decision. Include control remapping, readable text and team cues beyond color, adjustable audio and reduced-motion options in the beta usability work; verify implementation before claiming support. Use the candidate matrix below to establish technical readiness and human observations to establish whether invitations should expand.
+
+**Why this matters:** public matchmaking introduces population, queue quality, abuse and support obligations that private sessions do not validate. A functioning browser prototype also does not establish readiness for another platform. The goal is a complete experience for the named audience and delivery channel, not a vague promise to finish every possible feature.
+
+**Evidence / timing:** choose the release boundary before autonomous scope planning; approve the actual candidate at W7/W8 under the agreed release authority. Keep performance work deferred during current gameplay exploration, then run the required reliability gates before opening the beta. Agree reference devices and browser combinations before the release test; do not claim untested platforms.
+
+#### D8 · What evidence can change the design, and who supplies it?
+
+**Owner choice:** confirm a playtest cadence, arrange access to participants, and identify which failures should cause a redesign, scope cut or delayed release. Specify the owner's role in judging the desired feel when evidence supports several viable options.
+
+**Recommendation:** short four-person sessions after meaningful gameplay changes, with crews and roles swapped; use the existing six-fresh-player discovery and beta gates before expanding invitations. Agents prepare builds, scripts and anonymous summaries, then act on bounded findings. The owner chooses among competing experiential goals and helps secure participant availability; invitations/messages require their existing authorization. No extra numeric threshold in this register is an approved acceptance gate until adopted.
+
+**Why this matters:** automated tests establish execution and consistency. They cannot establish enjoyment, teachability, perceived fairness or willingness to replay. The owner has reported that the game works reasonably well after solo play; that is valuable early feedback, not a completed multiplayer fun gate. Neither one enthusiastic report nor a small win-rate sample is a reliable basis for broad balance claims.
+
+**Evidence / timing:** arrange participants now; collect evidence throughout W1/W5/W7. Log participant count/experience, build, input method, assistance, abandoned matches, rematch choice and contrary observations. If users see a threat but cannot answer it, test mechanics; if an answer exists but is missed, test teaching or cues. Name the question each change is intended to resolve.
+
+### Producer and operational decisions—not combat-design decisions
+
+| ID / owner | Decision needed and recommendation | When it blocks work |
+| --- | --- | --- |
+| O1 · owner / producer | Approve an actual monthly spending cap, hosting region/cohort size and purchasing permissions. The existing $30/month figure is an unapproved planning estimate, not a current hosting quote or spending authorization. Agent may research options; purchases require applicable authorization. | Before paid hosting, asset purchases or external subscriptions. Local gameplay work continues. |
+| O2 · owner / release host | Define deployment and publication authority: local builds, staging, invite endpoint and public release separately. Recommend autonomous reversible implementation/testing within agreed scope, with an owner go/no-go for the first public release. Existing authorized repo pushes and local work do not need reconfirmation. Confirm who monitors a live session and can roll back. | Before an action outside current authorization. Preparing a concrete candidate and runbook continues. |
+| O3 · owner / producer | Decide when commercial direction needs commitment: free private beta first is recommended; pricing and any later cosmetic business model remain undecided. Do not introduce monetized combat power. Confirm telemetry purpose, what leaves the player's machine and retention before enabling remote collection. | Before store work, payments, account architecture driven by monetization, or new data collection. No need to build these for the private prototype. |
+
+### How decisions become an autonomous work contract
+
+**Smallest useful initial answer:** D1 audience, D2 format/pacing, D3 combat priorities, D4 farming/advantage philosophy, D5 strategic complexity, D7 release/platform boundary and D8 playtest access. These can be approved together or edited selectively. D6 waits until art production; O1–O3 wait until the relevant external commitment. Unanswered questions do not stop independent work already authorized and do not count as accepted recommendations.
+
+For each resolved ID, record: **status (proposed / approved / testing / superseded), date, owner's actual decision, rationale, affected milestone, delegated scope, evidence link and condition for reopening**. Keep the recommendation distinct from the recorded decision. An agent can mark evidence collected or implementation complete; it cannot turn an unanswered owner choice into approval. A test result can challenge an assumption without silently replacing the owner's priority.
+
+Within accepted boundaries, agents own bug fixes, implementation architecture, appropriate tests, documentation, reversible balance experiments, ordinary bot behavior, platform coordinates and numeric tuning. Escalate when evidence implies changing a core pillar, approved scope, spending/publication limits or an irreversible production commitment. Present a concrete recommendation with alternatives and evidence; do not ask the owner to settle every value or routine refactor.
+
+**Dependency order:** intended audience and release boundary → match/combat/economy/strategy contract → targeted multiplayer playtests and tuning → approved art slice and remaining usability work → internet/reliability validation → candidate review and authorized release. The original week labels below are milestone references, not evidence these decisions or gates have passed.
+
+### Reasoning and sources
+
+The register's recommendations are design hypotheses for Rivet Rush, not findings about its players. Two primary developer accounts support the evaluation principles: [Riot's counterplay discussion](https://www.leagueoflegends.com/en-gb/news/dev/quick-gameplay-thoughts-may-14/) distinguishes immediate and strategic answers to threats; [Riot's clarity principles](https://www.leagueoflegends.com/en-us/news/dev/clarity-in-league/) prioritize recognizable gameplay information, consequential threats and limited visual noise. Neither establishes the correct match length, audience, economy or commercial model for this game. Those require the owner's intent and the [playtest process](playtesting.md).
+
 ## Capacity and schedule
 
-Target eight weeks from kickoff. Budget **24 engineering hours, 6 design/playtest hours and 4 QA/operations hours each week** (272 hours total). Roles can overlap. The lead engineer owns the build, the playtest lead owns recruitment and observations, and the release host owns staging, incident response and the go/no-go decision. Name people against those roles at kickoff. Recruit six first-time players for discovery and a separate six for beta validation, with four available simultaneously for two evening sessions. Arrange dates in week one.
+The original eight-week plan below is a proposed sequence, not an active delivery promise. Re-estimate remaining work after D1–D5, D7 and D8 are resolved; many implementation pieces already exist while human and internet gates remain open. Budget **24 engineering hours, 6 design/playtest hours and 4 QA/operations hours each week** (272 hours total). Roles can overlap. The lead engineer owns the build, the playtest lead owns recruitment and observations, and the release host owns staging, incident response and the go/no-go decision. Name people against those roles at kickoff. Recruit six first-time players for discovery and a separate six for beta validation, with four available simultaneously for two evening sessions. Arrange dates in week one.
 
 Plan 28 hours of scheduled work and reserve six each week for fixes. The longest dependency chain is symmetric simulation → authoritative remote duel → four-seat rooms → internet rehearsal → release candidate. Design discovery runs alongside the transport spike, but gate W1 before investing in additional mechanics. Each Friday record the actual build, evidence, pass/fail, owner and next decision. A missed gate consumes reserve or moves the invite date.
 
@@ -29,14 +141,14 @@ Plan 28 hours of scheduled work and reserve six each week for fixes. The longest
 | **7 · Dress rehearsal.** Host + playtest lead | Share staging with a small scheduled cohort. Run first-use and rematch sessions with six fresh pilots across at least two groups. Collect anonymous observations and match IDs. Schedule a second night for fixes and retests. | Pass all human gates below. Repeat technical gates affected by fixes. Triage every abandoned game, repeated unclear death or failed join. Freeze a candidate with pinned client, server and protocol versions; unresolved blockers keep it on staging. |
 | **8 · Friends beta.** Release host | Build the frozen revision in clean CI, stage the exact artifacts, verify rollback and ship those artifacts to the invite endpoint. Run one four-friend canary before expanding to the agreed cohort. | A second operator signs the release record. The canary completes two matches and a rematch flow with matching outcomes. Check incident thresholds before sending the next wave of invites. The first evening ends with a tested keep/rollback decision and owners for the next fixes. |
 
-**Cut order:** cut extra VFX and audio polish, optional team signal, then experiments with upgrade branches or bot tactics. Keep the two shipped kits and one map throughout. If four-seat reliability misses week six, hold a labeled 1v1 technical preview and move the beta date. Preserve reconnect, both crews' agency, rollback, reproducible testing and the human fun gate.
+**Cut order:** cut extra VFX and audio polish, optional team signal, then experiments with upgrade branches or bot tactics. Keep the owner-requested six heroes and three maps in the beta baseline; any reduction requires an explicit scope decision supported by playtest or delivery evidence. If four-seat reliability misses week six, hold a labeled 1v1 technical preview and move the beta date. Preserve reconnect, both crews' agency, rollback, reproducible testing and the human fun gate.
 
 ## Engineering contract for the online match
 
 - **Authority and time.** The server steps at a target 60 Hz and starts at 20 snapshots/s. Only the server resolves damage, cooldowns, currency, win state and seat ownership. Inputs carry match/seat identity, sequence and held/pressed actions. Deduplicate edge actions, discard old-match inputs and bound accepted message rate. Interpolate other entities. Predict local movement and reconcile to the acknowledged input. Test jumps, bridge expiry and buys under delayed or duplicated input.
 - **Lifecycle.** Drive lobby → ready → playing → result → lobby. A rematch gets a new match ID and fresh simulation. An online tab losing focus releases held keys while the server continues. Give a disconnected seat an idle-safe/bot takeover, reserve it for 60 seconds, and reclaim it with a separate opaque reconnect token. Expired reservations stay bots until match end. After a server restart show an interrupted outcome and a rejoin/new-room path. Run a disconnect during combat and a restart during the results screen.
 - **Fairness and containment.** Generate unguessable invites. Keep seat tokens separate from invitations. Enforce room membership, discrete actions, bounded input size/rate and a connection cap. A client cannot submit positions, currency or another pilot's commands. Reject mismatched protocols before play with an actionable refresh prompt. Ship team identification via labels or silhouettes as well as color. Bind controls and accessibility guidance to the real HUD.
-- **Distribution and cost.** Build versioned static client assets plus one matching server artifact. Run staging and invite rooms behind HTTPS/WSS in one region with a hard cap of four active rooms initially. Proposed hosting ceiling is $30/month for the beta, a planning constraint rather than a provider quote. Select the host in W3 after measuring one-room CPU/memory and checking current prices. Require owner approval before exceeding the cap. Set usage alerts at 50% and 80% and decline additional rooms at capacity. Retain a last-good artifact pair and a way to disable new rooms.
+- **Distribution and cost.** Build versioned static client assets plus one matching server artifact. Run staging and invite rooms behind HTTPS/WSS in one region with a hard cap of four active rooms initially. Proposed hosting ceiling is $30/month for the beta, a planning constraint rather than a provider quote. Select the host in W3 after measuring one-room CPU/memory and checking current prices. O1 must approve the spending cap and purchasing authority before paid services are provisioned; the planning estimate alone authorizes no spend. Set usage alerts at 50% and 80% and decline additional rooms at capacity. Retain a last-good artifact pair and a way to disable new rooms.
 - **Diagnostics.** For each room capture anonymous match ID, revision, server region, join/start/end/leave reason, tick latency, late-input counts and structured fault code. Expose a copyable match ID and “what went wrong?” feedback path. Keep tester contacts, room invites, tokens, raw IPs and voice out of gameplay reports. Set a short retention window (proposed seven days for raw diagnostics) and verify expiry. Document the actual storage and retention before sending invites.
 
 ## Candidate acceptance matrix
@@ -50,7 +162,7 @@ These are proposed release budgets. Establish the reference laptop, network prof
 | Transport | Apply WebSocket-capable network shaping in both directions. Test baseline 40 ms RTT and stress 150 ms RTT, ±30 ms jitter, 1% packet loss for ten minutes each. Track every local movement correction after startup. | All clients agree on final result and purchases. Baseline p95 local input-to-visible-motion ≤70 ms; stress p95 correction distance ≤24 world px. Compare against captured timestamps/positions; document smoothing and sample count. |
 | Recovery and isolation | Across two rooms, disconnect per seat for 10 s, for >60 s, and during rematch. Try an old token, guessed seat, another room's inputs, conflicting buy packets and malformed/oversized messages. Kill the staging service once. | Valid returning pilots recover within 5 s of transport restoration inside the reservation. Expired/foreign inputs cause zero state changes. Other rooms continue after a malformed client. Restart gives every affected client a clear recovery action. |
 | Load and budget | Run four four-seat rooms with moving, firing scripted clients for two hours and at least 50 room-create/destroy cycles. Sample after warmup on the intended host. Capture worst minute as well as aggregate. | Server p95 simulation work per 60 Hz tick across active rooms ≤12 ms, p99 ≤16.7 ms; post-cleanup process memory ≤120% of warm baseline; zero crashed rooms. Client p95 frame time ≤20 ms at 1280×720 in a crowded wave on the reference laptop. |
-| Match completion | Drive 30 full lifecycle matches with mixed bots/humans or scripted clients, including both friend configurations. Give each game a 12-minute timeout and log unfinished games separately. | 30/30 terminate once with the same result everywhere and reset cleanly. Proposed human pacing target is 4–10 minutes. If live games regularly exceed 12 minutes, test a visible stalemate breaker and rerun balance sessions. |
+| Match completion | Drive 30 full lifecycle matches with mixed bots/humans or scripted clients, including both friend configurations. Give each game a 12-minute timeout and log unfinished games separately. | 30/30 terminate once with the same result everywhere and reset cleanly. The current rules terminate by seven minutes, with meltdown at five. D2 must settle the desired human pacing; 5–7 minutes is the current recommendation. Record early endings and timed draws as well as completed wins. A proposed duration change requires updated rules, tests and human observations. |
 | First use and fun | Six fresh people open the invite without live coaching. Time arrival to controllable pilot once all seats are present. Run the [human session protocol](playtesting.md), offer a genuine choice to stop and repeat with crews swapped. | At least 5/6 deploy within 2 minutes, 4/6 choose to replay, and 4/6 describe an actionable response to a setback. Observe a successful escort and a successful flank plus a defender exploiting a route commitment. Report counts, context and contrary observations. Missing observations leave the gate open. |
 | Recovery rehearsal | Tag candidate, deploy to staging twice, drain new joins, redeploy prior client/server pair, then smoke a fresh four-seat room. Try a stale cached client. | Operator other than build author restores last-good play within 10 minutes. Version mismatch guides reload. Save elapsed time, build IDs, smoke outcome and runbook corrections. |
 
@@ -72,13 +184,13 @@ These are proposed release budgets. Establish the reference laptop, network prof
 | W2 · symmetric crews | Independent kits, farms, builds and cooldowns across four seats. Both teams can capture the vault. Mirrored bot and simultaneous KO tests pass. | Recheck placement and counterplay with humans swapping colors. |
 | W3 · remote duel | Shared server authority, local prediction and reconciliation run in real browsers against a delay relay. | Complete the real-network duels and OS-level impairment profiles on staging. |
 | W4 · party | Real browser clients can select pilots, deploy, finish, export a replay, reconnect and rematch. Socket tests exercise hostile and stale inputs plus room cleanup. | Verify unattended setup by friends on independent devices. |
-| W5 · teamwork | Last hits, contested pickups, Warden barriers and siege cells provide concrete coordination opportunities. The 0.2.1 feedback pass adds crew-only rally/retreat signals, ally status, farm feedback, optional field tips and recent-damage recaps. | Observe crews with and without voice and record successful responses. The single informal solo “feels OK” impression does not close this gate. |
+| W5 · teamwork | Last hits, contested pickups, Warden barriers and siege cells provide concrete coordination opportunities. The 0.2.1 feedback pass adds crew-only rally/retreat signals, ally status, farm feedback, optional field tips and recent-damage recaps. | Observe crews with and without voice and record successful responses. The owner’s informal solo reports (“feels OK” and the game works reasonably well) do not close this multiplayer gate. |
 | W6 · reliability | Loopback load drills, multiple browser engines, version checks, replay verification and an operator runbook exist. A content-identified release package, separate-host load mode, staging smoke tool, real reservation/restart drill and player report export support the next rehearsal. | Run the specified two-hour test on the chosen host, confirm resource budgets and have another operator rehearse rollback there. |
 | W7–8 · release | Exact test procedures, rollout and rollback criteria are defined. | Recruit fresh testers, fund or select hosting, run dress rehearsal and record the release decision. |
 
 The automated evidence and current limitations are recorded in the [engineering playtest record](playtests/2026-11-03-foundations.md). Treat automated participants as scripts when reporting the human gates.
 
-The next iteration's evidence is in the [teamplay and release-readiness record](playtests/2026-11-03-teamplay.md). Next external gate remains a reachable HTTPS/WSS staging host and a four-friend session. Additional pilots, maps and art remain deferred while these hypotheses are untested.
+The next iteration's evidence is in the [teamplay and release-readiness record](playtests/2026-11-03-teamplay.md). Next external gate remains a reachable HTTPS/WSS staging host and a four-friend session. Content beyond the six heroes and three arenas remains deferred; art production awaits owner review.
 
 The [design and art principles proposal](art-direction.md) is ready for owner review. Keep the current game art/assets/direction during mechanics work. Approval and a readable visual slice precede any rollout of the proposed style; no gameplay milestone waits for that art pass.
 
