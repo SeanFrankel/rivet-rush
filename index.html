@@ -25,7 +25,7 @@
         </div>
       </header>
       <div class="arena-label">
-        <span><i></i> ORBITAL SHIPBREAKERS</span><span>ARENA 01 &nbsp; / &nbsp; KILN YARD</span>
+        <span><i></i> ORBITAL SHIPBREAKERS</span><span id="arenaName">ARENA 01 &nbsp; / &nbsp; KILN YARD</span>
       </div>
       <div class="stage">
         <canvas
@@ -40,6 +40,7 @@
             <p id="brief">
               Farm scrap with your crew, break the sentry, then finish the exposed reactor.
             </p>
+            <div id="mapChoice"><label for="mapSelect">ARENA </label><select id="mapSelect" aria-label="Choose arena"></select><p id="mapInfo"></p></div>
             <div class="kit-picker" id="kits" role="group" aria-label="Choose your pilot">
               <button data-kit="runner" aria-pressed="true">
                 Arc Runner <small>SKIRMISHER</small></button
@@ -144,6 +145,7 @@
         ><span>DESKTOP · KEYBOARD + OPTIONAL MOUSE</span>
       </footer>
     </main>
+    <script src="maps.js"></script>
     <script src="heroes.js"></script>
     <script src="abilities.js"></script>
     <script src="match.js"></script>

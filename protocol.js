@@ -1,7 +1,7 @@
 "use strict";
 // Shared wire vocabulary. Held movement survives ticks. Edge actions are consumed once.
 const RivetWire = (() => {
-  const version = 8;
+  const version = 9;
   const held = ["left", "right", "fire", "down"];
   const edges = [
     "jump",
@@ -112,12 +112,16 @@ const RivetWire = (() => {
       }
       if (u.kind === "sentry" && u.aim) row.push(...values(u.aim, ["x", "y", "remaining"]));
       if (u.kind === "reactor") row.push(u.shielded ? 1 : 0);
-      if (u.kind === "keeper") row.push(Math.round(u.charge * 100) / 100);
+      if (u.kind === "keeper") row.push(Math.round(u.charge * 100) / 100, u.max, u.range);
       if (u.kind === "breaker" && u.mortarCharge > 0)
         row.push(Math.round(u.mortarCharge * 100) / 100);
       return row;
     });
     return {
+      mapId: m.mapId,
+      relay: { ...m.relay },
+      surgeUntil: [...m.surgeUntil],
+      camps: m.camps.map(c => ({...c})),
       tick: m.tick,
       wave: m.wave,
       bridge: Math.round(m.bridge * 100) / 100,
@@ -155,7 +159,7 @@ const RivetWire = (() => {
       if (kind === "sentry" && row.length > next)
         u.aim = assign({}, ["x", "y", "remaining"], row, next);
       if (kind === "reactor") u.shielded = !!row[next];
-      if (kind === "keeper") u.charge = row[next];
+      if (kind === "keeper") { u.charge = row[next]; u.max = row[next+1]; u.range = row[next+2]; }
       if (kind === "breaker") u.mortarCharge = row[next] || 0;
       return u;
     });

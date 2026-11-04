@@ -6,11 +6,11 @@
 
 ## Product contract
 
-Ship one hosted region, one map, six complementary pilot kits, two pilots per crew, and a private ready-up room. Four humans get a full 2v2. Two friends can play on the same side against bots or on opposite sides with one bot each. Empty seats can be filled with bots before deploy. Keep solo offline practice. A first-time friend needs only a desktop browser, keyboard and invite. Support desktop Chrome, Edge and Firefox on the tested OS/browser combinations below.
+Ship one hosted region, three maps, six complementary pilot kits, two pilots per crew, and a private ready-up room. Four humans get a full 2v2. Two friends can play on the same side against bots or on opposite sides with one bot each. Empty seats can be filled with bots before deploy. Keep solo offline practice. A first-time friend needs only a desktop browser, keyboard and invite. Support desktop Chrome, Edge and Firefox on the tested OS/browser combinations below.
 
 The reason to play with a friend is the fight around a wave. A Warden can shield the escort while a Runner launches an enemy away from the Breaker. A crew can trade lane pressure for the upper vault or punish an opponent that rotates too early. Test whether moving, farming and fighting feel good from both sides and whether the loser can describe a useful response. The optional bridge is one route through this arena.
 
-Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, a second arena and pilot kits beyond the six. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
+Defer matchmaking, accounts, public chat, ranks, persistent unlocks, controller/mobile support, additional arenas beyond the three and pilot kits beyond the six. A short invite session should answer whether players learn a tactic, encounter a counter and want to swap sides. Those answers determine which content earns another development cycle.
 
 ## Capacity and schedule
 
@@ -87,3 +87,7 @@ The [design and art principles proposal](art-direction.md) is ready for owner re
 The owner expanded the roster to six heroes with four active abilities each, with three genuine melee and three ranged basic attacks. This supersedes the original two-kit scope. The [character guide](characters.md) owns their design and matchup questions. Prioritize satisfying traversal, wave farming, readable fights, teammate protection and converting a won fight to base damage. Keep the existing art and simple shop. Performance and release-hardening work are deferred during this gameplay iteration; existing beta gates remain open rather than being silently waived.
 
 Next human session: swap melee/ranged roles, then crews. Try a protected escort, an upper-route flank and a neutral contest. Each player should demonstrate one successful engage and one answer to it. Track unavoidable damage, useless abilities, long walks without a decision and fights that fail to produce objective pressure. Revise those failures before adding more content. Automated checks establish operation and symmetry, not that the roster is balanced or fun.
+
+## Owner-directed arena iteration · 2026-11-03
+
+The owner expanded map scope to three selectable arenas. [Arena guide](maps.md) defines Kiln Yard, Skyway Relay and Foundry Split, with distinct geometry and siege, capture and supply objectives. This supersedes the original single-map limit. Keep current art and character kits while testing meaningful route choices. Next: swapped-crew human matches on each arena, comparing objective commitment, lost farm, defensive responses and conversion into base damage. Automated reachability and replication do not close the human fun gate.

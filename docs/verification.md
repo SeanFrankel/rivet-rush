@@ -38,7 +38,7 @@ For browser checks, install Chromium with `npx playwright install chromium` or s
 
 ## Manual acceptance
 
-The current snapshot schema is protocol **8**, and replay rules are **kiln-03.0**. Protocol 6 / kiln-02.4 recordings require their original build. The kiln-03.0 golden trace is a scripted four-seat match using the new abilities; it is not human play evidence. Earlier four-browser traces require their matching build and remain compatibility rejection fixtures. Team signals use separate room messages and do not enter deterministic replay inputs. Damage recap fields are replicated.
+The current snapshot schema is protocol **9**, and replay rules are **arenas-04.0**. Protocol 6 / kiln-02.4 recordings require their original build. The arenas-04.0 golden trace is a scripted four-seat match using the new abilities; it is not human play evidence. Earlier four-browser traces require their matching build and remain compatibility rejection fixtures. Team signals use separate room messages and do not enter deterministic replay inputs. Damage recap fields are replicated.
 
 The browser suite checks teammate-only signals, upgrade affordability and purchase effects, report exports without invite/seat secrets, the sentry death recap, and that controls fit at 1280×720. Check the actual screenshots as well as geometry assertions. For an operator report, verify `/health` includes a content fingerprint; packaged releases additionally include an artifact hash. Neither is a Git commit claim for a dirty workspace build.
 
@@ -47,3 +47,7 @@ From a fresh profile, complete a solo match with each kit. Collect a last hit an
 ### Six-hero gameplay iteration
 
 `heroes.js` owns profiles and declarative kits; `abilities.js` executes shared mechanics through `match.js`. Tests cover all 24 casts, melee versus ranged basics, anchor constraints, ally support, NPC-triggered traps, Coils allocation, evasion, cooldown persistence, mirrored autoaim and snapshot prediction. The browser suite selects each hero and casts all four abilities through actual controls. Current art remains unchanged. Long performance/soak investigations were stopped at owner request; no beta reliability gate is closed by this iteration.
+
+### Three-arena gameplay checks
+
+`maps.js` owns arena geometry and objective metadata. `tests/maps.test.js` checks mirrored layouts, all six heroes traversing all six checkpoints from both sides using shared movement, relay contest/decay/capture/expiry, independent camp respawns and reward steals, launch pads, snapshot roundtrips and replays on all maps. Room tests reject guest/invalid/live map changes and clear readiness on a host change. Browser checks select each arena and deploy/reconnect a shared map. All new runtime distributions include maps.js.

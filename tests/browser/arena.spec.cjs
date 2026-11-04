@@ -283,3 +283,34 @@ for (const kit of ["runner", "warden", "vesper", "rook", "fuse", "echo"]) {
     if (kit === "fuse") await page.screenshot({ path: ".tmp/roster-gameplay.png" });
   });
 }
+
+for (const mapId of ["kiln", "skyway", "foundry"]) {
+  test(mapId + " selection launches the chosen arena with its platform layout", async ({ page }) => {
+    const errors=[];page.on("pageerror",e=>errors.push(e.message));
+    await page.goto("/"); await page.getByLabel("Choose arena").selectOption(mapId);
+    await page.getByRole("button",{name:"Play skirmish"}).click();
+    expect(await page.evaluate(()=>match.mapId)).toBe(mapId);
+    expect(await page.evaluate(()=>Yard.platforms(match).length)).toBe(mapId==="kiln"?5:7);
+    await expect(page.locator("#arenaName")).toContainText(mapId==="kiln"?"KILN":mapId==="skyway"?"SKYWAY":"FOUNDRY");
+    await page.screenshot({path:".tmp/map-"+mapId+".png"}); expect(errors).toEqual([]);
+  });
+}
+test("host arena choice is shared with guests and survives deployment", async ({ browser }) => {
+  const a=await browser.newContext(),b=await browser.newContext();
+  try {
+    const host=await a.newPage(),guest=await b.newPage(); await host.goto("/");
+    await host.getByLabel("Choose arena").selectOption("skyway");
+    await host.getByRole("button",{name:"Private room"}).click();
+    await expect(host.getByRole("heading",{name:"Crew quarters"})).toBeVisible();
+    await guest.goto(host.url()); await expect(guest.getByLabel("Choose arena")).toHaveValue("skyway");
+    await expect(guest.getByLabel("Choose arena")).toBeDisabled();
+    await host.getByLabel("Choose arena").selectOption("foundry");
+    await expect(guest.getByLabel("Choose arena")).toHaveValue("foundry");
+    await guest.getByRole("button",{name:"Ready up"}).click();await host.getByRole("button",{name:"Ready up"}).click();
+    await host.getByRole("button",{name:"Deploy crew"}).click();
+    await expect(guest.locator("#connection")).toHaveText("LIVE · PRIVATE");
+    expect(await guest.evaluate(()=>match.mapId)).toBe("foundry");
+    await guest.reload();await expect(guest.locator("#connection")).toHaveText("LIVE · PRIVATE");
+    expect(await guest.evaluate(()=>match.mapId)).toBe("foundry");
+  } finally {await a.close();await b.close();}
+});

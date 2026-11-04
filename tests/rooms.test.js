@@ -232,3 +232,20 @@ test("fifty create/leave cycles release their rooms and all four seats", async (
     assert.equal(f.host.rooms.size, 0);
   }
 });
+
+test("only lobby host selects maps and a change clears readiness for everyone", async t => {
+  const f=await fixture(t), {c,seat}=await f.create(), guest=await f.join(seat.room);
+  await guest.take("seat");
+  c.send({type:"ready",ready:true}); guest.send({type:"ready",ready:true});
+  await c.take("lobby",m=>m.seats.filter(Boolean).every(s=>s.ready));
+  guest.send({type:"map",mapId:"skyway"}); await guest.take("error");
+  c.send({type:"map",mapId:"missing"}); await c.take("error");
+  c.send({type:"map",mapId:"foundry"});
+  const lobby=await c.take("lobby",m=>m.mapId==="foundry");
+  assert.ok(lobby.seats.filter(Boolean).every(s=>!s.ready));
+  c.send({type:"ready",ready:true}); guest.send({type:"ready",ready:true});
+  await c.take("lobby",m=>m.mapId==="foundry" && m.seats.filter(Boolean).every(s=>s.ready));
+  c.send({type:"start"}); const state=await guest.take("state"); assert.equal(state.game.mapId,"foundry");
+  c.send({type:"map",mapId:"skyway"}); await c.take("error");
+  assert.equal(f.host.rooms.get(seat.room).game.mapId,"foundry");
+});

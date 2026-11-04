@@ -29,18 +29,12 @@ let lesson = 0,
   localKind = "skirmish",
   uiKey = "",
   inviteCode = "",
-  selectedKit = "runner";
+  selectedKit = "runner",
+  selectedMap = "kiln";
 let recording = null;
 let playback = null,
   replaySpeed = 1;
-const gates = [
-  [416, 275],
-  [690, 208],
-  [890, 149],
-  [1090, 208],
-  [1364, 275],
-  [1605, 345],
-];
+let gates = Yard.maps.kiln.gates;
 let trial = null;
 function box(x, y, w, h, color) {
   ctx.fillStyle = color;
@@ -472,7 +466,7 @@ function drawUnit(u) {
       9,
     );
   if (u.kind === "keeper")
-    label(u.charge > 0 ? "DISCHARGE" : "VAULT KEEPER", u.x - 31, y - 6, c, 9);
+    label(u.charge > 0 ? "DISCHARGE" : match.mapId === "foundry" ? "SUPPLY GUARD" : "VAULT KEEPER", u.x - 31, y - 6, c, 9);
   if (u.repairing) label("+", u.x + 13, y - 4, "#8ff5c2", 15);
   if (u.kind === "pilot") {
     const tag =
@@ -540,6 +534,37 @@ function drawEffect(f) {
   }
   ctx.restore();
 }
+function objectiveStatus(m) {
+  const arena = Yard.mapFor(m), o = arena.objective;
+  if (o.kind === "relay") {
+    const remaining = Math.ceil(m.surgeUntil[m.player.team] - m.time);
+    return remaining > 0 ? "CREW TAILWIND · " + remaining + "s" : m.time < m.relay.next
+      ? "RELAY IN " + Math.ceil(m.relay.next-m.time) + "s" : "RELAY · HOLD 4s / CONTEST";
+  }
+  if (o.kind === "camps") return "SUPPLIES · " + m.units.filter(u=>u.kind==="keeper" && u.hp).length + "/2 ACTIVE";
+  return m.units.some(u=>u.kind==="keeper" && u.hp) ? "UPPER VAULT · ACTIVE" :
+    m.drops.some(d=>d.type==="cell") ? "UPPER VAULT · CELL LOOSE" : "NEXT VAULT · " + Math.max(0,Math.ceil(m.neutralAt-m.time)) + "s";
+}
+function drawMapObjectives() {
+  const arena = Yard.mapFor(match), o = arena.objective;
+  for (const x of arena.jets) {
+    box(x-24, Yard.floor-5, 48, 5, "#ffc878");
+    line(x-10, Yard.floor-14, x, Yard.floor-25, "#ffc878", 3);
+    line(x, Yard.floor-25, x+10, Yard.floor-14, "#ffc878", 3);
+    label("JUMP · LAUNCH", x-35, Yard.floor+20, "#ffc878", 9);
+  }
+  if (o.kind === "relay") {
+    const live = match.time >= match.relay.next, color = match.relay.team < 0 ? "#ffc878" : palette[match.relay.team];
+    box(o.x-60, o.y-4, 120, 4, color);
+    label(live ? "HOLD RELAY · 4s" : "RELAY " + Math.ceil(match.relay.next-match.time) + "s", o.x-47, o.y-43, color, 10);
+    box(o.x-40,o.y-35,80,4,"#344552");
+    box(o.x-40,o.y-35,80*match.relay.progress/o.capture,4,color);
+  }
+  if (o.kind === "camps") o.camps.forEach(([x,y], i) => {
+    const next = match.camps[i].next;
+    label(next === null ? "SUPPLY CAMP" : "SUPPLIES " + Math.max(0,Math.ceil(next-match.time)) + "s", x-38,y-58,"#ffc878",9);
+  });
+}
 function worldHUD() {
   for (const core of match.units.filter((u) => u.kind === "reactor")) {
     const x = core.team ? 752 : 16;
@@ -602,11 +627,7 @@ function worldHUD() {
       label(Math.ceil(target.hp), 175, 394, "#e6e2d9", 10);
       const keeper = match.units.find((u) => u.kind === "keeper");
       label(
-        keeper
-          ? "UPPER VAULT · ACTIVE"
-          : match.drops.some((d) => d.type === "cell")
-            ? "UPPER VAULT · CELL LOOSE"
-            : "NEXT VAULT · " + Math.max(0, Math.ceil(match.neutralAt - match.time)) + "s",
+        objectiveStatus(match),
         23,
         404,
         "#abbec2",
@@ -746,6 +767,7 @@ const lessonText = [
 ];
 function draw() {
   const p = match.player;
+  el("arenaName").textContent = Yard.mapFor(match).name.toUpperCase() + (match.training ? "" : " / " + objectiveStatus(match));
   const watching =
     !p.hp && mode !== "replay"
       ? match.units.find((u) => u.kind === "pilot" && u.team === p.team && u.hp)
@@ -765,12 +787,13 @@ function draw() {
     ctx.stroke();
     label(String(trial.gate + 1), x - 4, y - 17, "#fff4cf", 14);
   }
-  for (const x of Yard.switches) {
+  for (const x of Yard.mapFor(match).switches) {
     box(x - 5, 178, 9, 30, "#253a47");
     box(x - 11, 173, 23, 13, "#eebb68");
     label("C", x - 3, 183, "#19252d");
   }
-  label("KILN  //  07", 805, 404, "#72828c", 21);
+  label(Yard.mapFor(match).name.toUpperCase(), 805, 404, "#72828c", 16);
+  drawMapObjectives();
   for (const z of match.zones || []) {
     ctx.save(); ctx.strokeStyle = palette[z.team]; ctx.lineWidth = 2;
     ctx.setLineDash(z.delay > 0 ? [5, 5] : z.trigger ? [2, 4] : []);
@@ -790,7 +813,7 @@ function draw() {
   }
   for (const d of match.drops) {
     const y = d.y + (reducedMotion ? 0 : Math.sin(match.time * 5 + d.id) * 2),
-      r = d.type === "cell" ? 10 : 5;
+      r = (d.type === "cell" || d.type === "supply") ? 10 : 5;
     poly(
       [
         [d.x, y - r],
@@ -801,7 +824,7 @@ function draw() {
       "#ffc878",
     );
     box(d.x - 1, y - 2, 2, 4, "#6f4a39");
-    if (d.type === "cell") label("CLAIM", d.x - 14, y - 15, "#fff0ba");
+    if (d.type === "cell" || d.type === "supply") label("CLAIM", d.x - 14, y - 15, "#fff0ba");
   }
   for (const s of match.shots) {
     line(s.x, s.y, s.x - s.vx * 0.021, s.y - s.vy * 0.021, dark[s.team], 5);
@@ -896,16 +919,18 @@ function pilotHUD() {
   el("fieldTip").hidden = !tipsEnabled || match.training || mode !== "play";
   if (!el("fieldTip").hidden) {
     const tower = match.units.find((u) => u.kind === "sentry" && u.team !== p.team);
-    const cell = match.drops.some((d) => d.type === "cell");
+    const cell = match.drops.some((d) => d.type === "cell" || d.type === "supply");
     const keeper = match.units.some((u) => u.kind === "keeper" && u.hp);
     const tip = !p.hp
       ? "Use this reset to regroup. Your mods and unspent scrap are kept."
       : p.hp < p.max * 0.35
         ? "LOW HEALTH · Retreat near your reactor. Repair starts after 2 seconds without damage."
         : cell
-          ? "SIEGE CELL LOOSE · Touch it on the upper vault deck to reinforce your next wave."
+          ? (match.mapId === "foundry" ? "SUPPLY CACHE · Touch it before the other crew for team scrap and repairs." : "SIEGE CELL LOOSE · Touch it on the upper vault deck to reinforce your next wave.")
+          : match.mapId === "skyway" && match.time >= match.relay.next
+            ? "RELAY · Hold its central deck for 4 seconds without enemies. Your crew gains 20 seconds of faster running."
           : keeper && Math.abs(p.x - 890) < 300 && p.y <= 230
-            ? "VAULT · Fire from the upper decks. Leave the warning circle before the Keeper attacks."
+            ? (match.mapId === "foundry" ? "SUPPLIES · Fight from the camp shelf, dodge its warning, then collect the cache before a rival." : "VAULT · Fire from the upper decks. Leave the warning circle before the Keeper attacks.")
             : p.farmScrap === 0 && match.time < 50
               ? "FIRST WAVE · Last-hit enemy crawlers, then collect their glowing salvage for extra scrap."
               : tower?.hp && match.time < 300
@@ -1004,6 +1029,7 @@ function showPanel(state, title, brief, button) {
   el("roomActions").hidden = true;
   el("extras").hidden = state !== "ready";
   el("private").hidden = state !== "ready";
+  el("mapChoice").hidden = state !== "ready" && state !== "lobby";
   el("kits").hidden = el("kitInfo").hidden = state !== "ready" && state !== "lobby";
   el("leave").hidden = state === "ready";
   el("inviteWrap").hidden = true;
@@ -1023,15 +1049,17 @@ function title() {
   el("replayTools").hidden = true;
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   el("private").textContent = "Private room";
-  match = Yard.create({ teamSize, kits: { 0: selectedKit } });
+  match = Yard.create({ teamSize, kits: { 0: selectedKit }, mapId: selectedMap });
   uiKey = "";
   showPanel(
     "ready",
-    "The Kiln Yard",
+    selectedMap === "kiln" ? "The Kiln Yard" : Yard.maps[selectedMap].name,
     "Farm scrap with your crew, break the sentry, then finish the exposed reactor.",
     "Play skirmish ↗",
   );
   showKit(selectedKit);
+  showMap(selectedMap);
+  el("mapSelect").disabled = false;
   el("connection").textContent = "LOCAL";
 }
 function beginPlay() {
@@ -1052,8 +1080,9 @@ function startLocal(kind) {
   trial = null;
   match =
     kind === "skirmish"
-      ? Yard.create({ teamSize, kits: { 0: selectedKit } })
-      : Yard.createTraining(selectedKit);
+      ? Yard.create({ teamSize, kits: { 0: selectedKit }, mapId: selectedMap })
+      : Yard.createTraining(selectedKit, selectedMap);
+  gates = Yard.mapFor(match).gates;
   recording = kind === "skirmish" ? RivetReplay.recorder(match) : null;
   if (kind === "trial") {
     match.units = [match.player];
@@ -1106,7 +1135,7 @@ function finish() {
     Math.round(p.objectiveDamage) +
     " objective damage · " +
     match.contracts[p.team] +
-    " siege cells";
+    " objectives";
   const network = room.phase === "end";
   showPanel(
     "end",
@@ -1136,6 +1165,9 @@ function roomLobby(lobby) {
   if (lobby.phase !== "lobby") return;
   showPanel("lobby", "Crew quarters", "Pick a seat and ready up. Empty seats deploy as bots.", "");
   el("roomActions").hidden = false;
+  selectedMap = lobby.mapId;
+  showMap(selectedMap);
+  el("mapSelect").disabled = lobby.host !== room.seat;
   const list = el("seats");
   list.replaceChildren();
   for (const i of [0, 1, 2, 3]) {
@@ -1232,6 +1264,7 @@ el("saveReport").onclick = async () => {
     recordedAt: new Date().toISOString(),
     mode: room.phase === "offline" ? localKind : "private room",
     matchId: room.matchId || null,
+    mapId: match.mapId,
     tick: match.tick,
     winner: match.winner,
     endReason: match.endReason,
@@ -1294,6 +1327,22 @@ el("saveReport").onclick = async () => {
   el("message").textContent =
     "Report saved. Add your observations before sharing it with the host.";
 };
+function showMap(id) {
+  const arena = Yard.maps[id];
+  el("mapSelect").value = id;
+  el("mapInfo").textContent = arena.summary + " " + arena.tradeoff;
+  room.mapPreference = id;
+}
+for (const [id, arena] of Object.entries(Yard.maps)) {
+  const option = document.createElement("option"); option.value = id; option.textContent = arena.name;
+  el("mapSelect").append(option);
+}
+el("mapSelect").onchange = () => {
+  const id = el("mapSelect").value;
+  if (room.phase === "lobby") room.send({ type: "map", mapId: id });
+  else { selectedMap = id; title(); }
+};
+showMap(selectedMap);
 function showKit(kit) {
   for (const b of el("kits").querySelectorAll("button"))
     b.setAttribute("aria-pressed", String(b.dataset.kit === kit));
@@ -1317,7 +1366,7 @@ for (const b of el("kits").querySelectorAll("button"))
     showKit(selectedKit);
     if (room.phase === "lobby") room.send({ type: "kit", kit: selectedKit });
     else {
-      match = Yard.create({ teamSize, kits: { 0: selectedKit } });
+      match = Yard.create({ teamSize, kits: { 0: selectedKit }, mapId: selectedMap });
       uiKey = "";
     }
   };
@@ -1620,7 +1669,7 @@ function updateTrial(input) {
   sounds.event("salvage");
   if (trial.gate < gates.length) return;
   const seconds = (match.tick - trial.start) / 60;
-  const key = "rivet-lap-02-" + p.kit;
+  const key = "rivet-lap-04-" + match.mapId + "-" + p.kit;
   let best = seconds;
   try {
     const previous = Number(localStorage.getItem(key));

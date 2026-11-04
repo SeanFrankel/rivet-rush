@@ -53,7 +53,7 @@ test("incompatible and out-of-order replay inputs fail before playback", () => {
   assert.equal(altered.verified(), false);
 });
 test("the scripted four-hero match still reaches its recorded reactor kill", () => {
-  const record = require("./fixtures/kiln-03.0-2v2.json");
+  const record = require("./fixtures/arenas-04.0-foundry.json");
   const replay = Replay.load(record);
   while (replay.advance()) {}
   assert.equal(replay.verified(), true);
@@ -61,5 +61,5 @@ test("the scripted four-hero match still reaches its recorded reactor kill", () 
 });
 
 test("previous rule recordings explain the matching-build requirement", () => {
-  assert.throws(() => Replay.load(require("./fixtures/kiln-02.5-2v2.json")), /matching/);
+  assert.throws(() => Replay.load(require("./fixtures/kiln-03.0-2v2.json")), /matching/);
 });

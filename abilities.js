@@ -100,7 +100,7 @@ const RivetAbilities = (() => {
           const heading = angle + (op.angleOffset || 0) + (i - (count - 1) / 2) * (op.spread || 0);
           m.shots.push({ id: ++m.serial, source: u.id, team: u.team, x: u.x, y: middle(u),
             vx: Math.cos(heading) * op.speed, vy: Math.sin(heading) * op.speed,
-            damage: op.damage + 4 * u.coilRank * (op.coilScale ?? 1), left: op.range, upperShot: u.y <= 230,
+            damage: op.damage + 4 * u.coilRank * (op.coilScale ?? 1), left: op.range, upperShot: u.y <= 230, originY: u.y,
             force: op.force || 0, lift: op.lift || 0, pull: !!op.pull,
             pierce: op.pierce || 0, hitIds: [], ability: true });
         }
@@ -120,7 +120,7 @@ const RivetAbilities = (() => {
         const inside = m.units.filter((u) => u.hp > 0 && Math.hypot(u.x - z.x, middle(u) - z.y) <= z.radius);
         if (z.trigger && !inside.some((u) => u.team !== z.team)) continue;
         for (const target of inside) {
-          if (target.kind === "keeper" && z.y > 230) continue;
+          if (target.kind === "keeper" && z.y > target.y + 64) continue;
           if (target.team === z.team) {
             if (target.speed && z.heal) target.hp = Math.min(target.max, target.hp + z.heal);
             if (target.speed && z.shield) {
@@ -144,7 +144,7 @@ const RivetAbilities = (() => {
       const a = angle ?? (u.dir > 0 ? 0 : Math.PI);
       for (const target of m.units) {
         if (!target.hp || target.team === u.team || distance(u, target) > u.range) continue;
-        if (target.kind === "keeper" && u.y > 230) continue;
+        if (target.kind === "keeper" && u.y > target.y + 81) continue;
         const dx = target.x - u.x, dy = middle(target) - middle(u), d = Math.hypot(dx, dy) || 1;
         if ((dx * Math.cos(a) + dy * Math.sin(a)) / d < .15) continue;
         hits.push({ target, source: u, damage: u.damage });

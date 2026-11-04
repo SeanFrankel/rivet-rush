@@ -4,7 +4,7 @@
 const RivetReplay = (() => {
   const wire = typeof module !== "undefined" ? require("./protocol") : RivetWire;
   const yard = typeof module !== "undefined" ? require("./match") : Yard;
-  const rules = "kiln-03.0";
+  const rules = "arenas-04.0";
   const stride = wire.maxMask + 1;
   const limit = 60 * 420;
   function inputCode(input) {
@@ -43,6 +43,7 @@ const RivetReplay = (() => {
       export(game) {
         return {
           format: "rivet-rush",
+          mapId: game.mapId,
           rules,
           protocol: wire.version,
           kits: pilots.map((p) => p.kit),
@@ -62,6 +63,7 @@ const RivetReplay = (() => {
     )
       throw Error("Replay requires the matching Rivet Rush build.");
     if (
+      typeof record.mapId !== "string" || !Object.hasOwn(yard.maps, record.mapId) ||
       !Array.isArray(record.kits) ||
       ![2, 4].includes(record.kits.length) ||
       record.kits.some((k) => typeof k !== "string" || !Object.hasOwn(yard.kits, k))
@@ -96,6 +98,7 @@ const RivetReplay = (() => {
     const game = yard.create({
       teamSize: record.kits.length / 2,
       kits: record.kits,
+      mapId: record.mapId,
     });
     const inputs = {};
     let cursor = 0;

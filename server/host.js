@@ -15,7 +15,7 @@ const root = path.resolve(__dirname, "..");
 const staticFiles = new Map([
   ["/", ["index.html", "text/html"]],
   ["/index.html", ["index.html", "text/html"]],
-  ...["heroes.js", "abilities.js", "match.js", "protocol.js", "replay.js", "online.js", "yard.js", "sound.js"].map((name) => [
+  ...["maps.js", "heroes.js", "abilities.js", "match.js", "protocol.js", "replay.js", "online.js", "yard.js", "sound.js"].map((name) => [
     "/" + name,
     [name, "text/javascript"],
   ]),
@@ -158,6 +158,7 @@ function createHost(options = {}) {
     broadcast(room, {
       type: "lobby",
       room: room.id,
+      mapId: room.mapId,
       phase: room.phase,
       host: room.host,
       seats: room.seats.map((s) => (s ? { online: !!s.ws, ready: s.ready, kit: s.kit } : null)),
@@ -227,6 +228,7 @@ function createHost(options = {}) {
   function begin(room) {
     room.game = Yard.create({
       teamSize: 2,
+      mapId: room.mapId,
       kits: room.seats.map((s) => s?.kit),
     });
     room.recorder = Replay.recorder(room.game);
@@ -258,6 +260,7 @@ function createHost(options = {}) {
         if (draining || rooms.size >= capacity) return reject(ws, "Yard is full. Try again later.");
         const fresh = {
           id: token(12),
+          mapId: typeof msg.mapId === "string" && Object.hasOwn(Yard.maps, msg.mapId) ? msg.mapId : "kiln",
           phase: "lobby",
           host: 0,
           seats: Array(4).fill(null),
@@ -353,6 +356,13 @@ function createHost(options = {}) {
       case "ready":
         if (room.phase !== "lobby") return reject(ws, "Wait for the lobby.");
         s.ready = msg.ready === true;
+        lobby(room);
+        return;
+      case "map":
+        if (room.phase !== "lobby" || room.host !== ws.seat || typeof msg.mapId !== "string" || !Object.hasOwn(Yard.maps, msg.mapId))
+          return reject(ws, "Only the host can choose an available arena in the lobby.");
+        room.mapId = msg.mapId;
+        for (const seat of room.seats) if (seat) seat.ready = false;
         lobby(room);
         return;
       case "kit":

@@ -72,6 +72,7 @@ class RivetRoom {
             }
           : {
               type: "create",
+              mapId: this.mapPreference,
               kit: this.preference,
               version: RivetWire.version,
             },

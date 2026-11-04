@@ -1,4 +1,4 @@
-# Kiln Yard rules
+# Shared match rules
 
 One or two pilots per crew push a shared lane. Online rooms field two pilots per crew and fill vacant seats with bots. Everyone uses the same simulation on a fixed 60 Hz clock. A match awards victory to the crew that destroys the opposing reactor. If both reactors fall on the same tick, the match is a draw. [Simulation](../match.js) · [controls](../README.md)
 
@@ -42,7 +42,9 @@ Purchases are personal and work anywhere while alive. Buy up to six mods per mat
 
 ## Map, NPCs and objectives
 
-The arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored lower decks, upper decks, crossing switches, sentries and reactors. Lower decks sit 70 px above the floor, upper decks 137 px above it and the central vault deck 196 px above it. C at either switch opens the upper crossing for ten seconds. The bridge is one optional route.
+Three arenas are available in solo and private play. The [arena guide](maps.md) owns their geometry, secondary objectives, timing, launch pads and rewards. The Kiln Yard details below apply to that arena; Skyway Relay replaces its Keeper with a contested capture point, and Foundry Split replaces it with two supply camps. Base, wave and farming rules remain shared.
+
+Each arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored platforms, sentries and reactors. Kiln Yard also has crossing switches. Lower decks sit 70 px above the floor, upper decks 137 px above it and the central vault deck 196 px above it. C at either switch opens the upper crossing for ten seconds. The bridge is one optional route.
 
 | Unit | HP | Movement / target range | Attack |
 | --- | ---: | --- | --- |
@@ -52,7 +54,7 @@ The arena is 1,780 px wide, with the floor at y=345. Both crews have mirrored lo
 | Reactor | 540 | Stationary / 120 px | 8 damage every 1.1 s. Shielded until its sentry falls or meltdown begins. |
 | Vault Keeper | 245 | Central upper deck / 125 px | Shows a warning circle for 0.65 s before a 22-damage discharge. Both crews can dodge out. |
 
-The first Keeper spawns at 0:48. After it falls, the siege cell stays on the upper deck for ten seconds. Carrying it is automatic on contact. Each pilot on the claiming crew gets 6 scrap and the next wave gains a bonus Breaker. The Keeper returns 75 s after defeat. A kill alone leaves the cell open to a steal.
+On Kiln Yard, the first Keeper spawns at 0:48. After it falls, the siege cell stays on the upper deck for ten seconds. Carrying it is automatic on contact. Each pilot on the claiming crew gets 6 scrap and the next wave gains a bonus Breaker. The Keeper returns 75 s after defeat. A kill alone leaves the cell open to a steal.
 
 At home, a wounded pilot within 106 px horizontally of their reactor repairs 24 HP/s once two seconds have elapsed without taking damage. Respawn delay starts at five seconds and adds one every 75 s, up to nine. On respawn, a pilot returns with full health and up to 1.1 s of protection. Attacking or using any ability ends that protection.
 

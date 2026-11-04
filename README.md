@@ -1,10 +1,10 @@
 # Rivet Rush
 
-A side-scrolling MOBA for up to four pilots. Farm crawlers for scrap, build your pilot, and fight alongside your teammate to destroy the enemy sentry and reactor. The Kiln Yard has a ground lane for siege waves and an upper platform where both crews can contest a reinforcement.
+A side-scrolling MOBA for up to four pilots. Farm crawlers for scrap, build your pilot, and fight alongside your teammate to destroy the enemy sentry and reactor. Choose among [three arenas](docs/maps.md): Kiln Yard’s siege vault, Skyway Relay’s launch pads and capture point, or Foundry Split’s twin supply camps. Each retains a ground lane for siege waves.
 
 ## Play on your computer
 
-Download or clone this repository, open `index.html` in a desktop browser, pick one of [six heroes](docs/characters.md), then select **Play skirmish**. You control one pilot. Bots fill the other seats. **Crew size** switches between 1v1 and 2v2. **Training deck** teaches a double jump, dash strike and all four abilities. **Movement run** times you across six checkpoints on the same map and keeps a personal best per pilot on this device. R restarts a run.
+Download or clone this repository, open `index.html` in a desktop browser, pick one of [six heroes](docs/characters.md), choose an **Arena**, then select **Play skirmish**. You control one pilot. Bots fill the other seats. **Crew size** switches between 1v1 and 2v2. **Training deck** teaches a double jump, dash strike and all four abilities. **Movement run** times you across six checkpoints on the selected map and keeps a personal best per arena and pilot on this device. R restarts a run.
 
 ## Play with friends
 
@@ -40,3 +40,5 @@ For a bug or playtest observation, open **Field menu → Save playtest report**,
 The [game handbook](docs/README.md) contains the rules, test procedures and beta roadmap. Contributors should start with [AGENTS.md](AGENTS.md). Third-party licenses and asset provenance are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 Three melee heroes (Warden, Rook, Echo) specialize in protection, displacement and flanking. Three ranged heroes (Runner, Vesper, Fuse) specialize in aerial pursuit, precision and traps. All retain double jump and the shared Shift dash. The [character guide](docs/characters.md) describes each kit, combo and counterplay. Current art remains placeholder; the proposed art direction awaits owner review.
+
+The private-room host chooses the arena before ready-up; changing it clears everyone’s ready state. Secondary objectives support the push: a bonus Breaker in Kiln Yard, a temporary running boost in Skyway Relay, or crew scrap and repairs in Foundry Split. [Routes, rewards and counterplay](docs/maps.md).

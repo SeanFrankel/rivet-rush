@@ -10,7 +10,7 @@ This is the central review draft for future character art, environments, animati
 
 Before an art-facing change, read the principles and the relevant discipline section. Identify the player's decision, the information that must survive the change, and the acceptance check. Keep the [game rules](gameplay.md) authoritative for mechanics, hitboxes and timing; use the [playtest guide](playtesting.md) to evaluate fun and the [roadmap](roadmap.md) to decide scope. Follow the [update matrix](updating.md) in the same change.
 
-The priority order is **fair information → responsive movement → readable MOBA decisions → expressive identity → decoration**. A beautiful asset that hides a threat fails. An unfinished asset that communicates it accurately is acceptable at this stage. The current six kits and one map are sufficient to test the direction; the roster expanded at the owner’s request after this proposal was drafted. This document authorizes no new gameplay system, biome, character, campaign or art-production sprint by itself.
+The priority order is **fair information → responsive movement → readable MOBA decisions → expressive identity → decoration**. A beautiful asset that hides a threat fails. An unfinished asset that communicates it accurately is acceptable at this stage. The current six kits and three maps are sufficient to test the direction; the roster and arena scope expanded at the owner’s request after this proposal was drafted. This document authorizes no new gameplay system, biome, character, campaign or art-production sprint by itself.
 
 ## Audience and the opportunity hypothesis
 
@@ -162,7 +162,7 @@ Use a small shared material and shape kit before bespoke illustration. Build a s
 | Now: foundations | This direction and its evidence; functional placeholders continue. | Agents can make consistent decisions without reinterpreting the current placeholder art. No gameplay milestone waits for polish. |
 | Direction spike | Three small composition variants within Brightwork, two kit silhouettes, a palette/value sheet and one short motion test on the existing map. No new content. | Choose the strongest variant using the readability and audience checks below. Reject confusing genre signals before finishing art. |
 | Playable visual slice | Replace one encounter's graphics, including both teams and the farm-to-sentry-to-reactor information. Compare the same replay with the baseline. | Keep it only if recognition, movement feel and browser performance hold. Record contrary feedback. |
-| Friends beta pass | Apply the proven vocabulary consistently across the six kits and one map. Fix misleading tells, missing states and unreadable UI first. | Meet the applicable release gates. Decorative scenery, bespoke music and extra portraits remain cuttable. |
+| Friends beta pass | Apply the proven vocabulary consistently across the six kits and three maps. Fix misleading tells, missing states and unreadable UI first. | Meet the applicable release gates. Decorative scenery, bespoke music and extra portraits remain cuttable. |
 
 The following are **proposed acceptance tests**, not measured results or statistical proof of market fit:
 

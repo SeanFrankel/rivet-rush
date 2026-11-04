@@ -3,18 +3,12 @@
 const Yard = (() => {
   const heroes = typeof module !== "undefined" ? require("./heroes") : RivetHeroes;
   const abilityEngine = typeof module !== "undefined" ? require("./abilities") : RivetAbilities;
+  const mapCatalog = typeof module !== "undefined" ? require("./maps") : RivetMaps;
+  const mapFor = m => mapCatalog.get(m.mapId);
   const width = 1780;
   const floor = 345;
   const stepSeconds = 1 / 60;
-  const ledges = [
-    [295, 505, 275],
-    [565, 755, 208],
-    [820, 960, 149],
-    [1025, 1215, 208],
-    [1275, 1485, 275],
-  ];
-  const bridgeDeck = [755, 1025, 208];
-  const switches = [715, width - 715];
+  const switches = mapCatalog.maps.kiln.switches;
   const stats = {
     pilot: {
       max: 150,
@@ -211,7 +205,12 @@ const Yard = (() => {
   }
 
   function create(options = {}) {
+    const objective = mapCatalog.get(options.mapId).objective;
     const m = {
+      mapId: mapCatalog.valid(options.mapId) ? options.mapId : "kiln",
+      relay: { team: -1, progress: 0, next: objective.first },
+      surgeUntil: [0, 0],
+      camps: (objective.camps || []).map(() => ({ next: objective.first })),
       units: [],
       shots: [],
       fx: [],
@@ -227,7 +226,7 @@ const Yard = (() => {
       delayed: [],
       winner: null,
       endReason: null,
-      neutralAt: 48,
+      neutralAt: objective.kind === "vault" ? objective.first : null,
       convoy: [false, false],
       contracts: [0, 0],
       announcement: "",
@@ -249,8 +248,8 @@ const Yard = (() => {
     return follow(m);
   }
 
-  function createTraining(kit) {
-    const m = create({ kits: { 0: kit } });
+  function createTraining(kit, mapId = "kiln") {
+    const m = create({ kits: { 0: kit }, mapId });
     m.training = true;
     m.units = m.units.filter((u) => u.kind === "pilot");
     m.player.x = 550;
@@ -309,15 +308,20 @@ const Yard = (() => {
     if (u.kind === "keeper") {
       m.drops.push({
         id: ++m.serial,
-        type: "cell",
+        type: mapFor(m).objective.kind === "camps" ? "supply" : "cell",
         x: u.x,
         y: u.y - 17,
         amount: 0,
         life: 10,
         team: 2,
       });
-      m.neutralAt = m.time + 75;
-      announce(m, "Siege cell loose · claim the upper deck");
+      if (mapFor(m).objective.kind === "camps") {
+        m.camps[u.campId].next = m.time + mapFor(m).objective.respawn;
+        announce(m, "Supply cache loose · either crew can claim it");
+      } else {
+        m.neutralAt = m.time + 75;
+        announce(m, "Siege cell loose · claim the upper deck");
+      }
       return;
     }
     const bounty = { crawler: 2, breaker: 5, pilot: 8, sentry: 15, reactor: 0 }[u.kind];
@@ -373,6 +377,7 @@ const Yard = (() => {
       damage: u.damage,
       siege: u.kind === "breaker",
       upperShot: u.kind === "pilot" && u.y <= 230,
+      originY: u.y,
       left: u.range + 24,
     });
     u.cd = u.rate;
@@ -393,7 +398,7 @@ const Yard = (() => {
         (front && (other.x - u.x) * u.dir < 0)
       )
         continue;
-      if (other.kind === "keeper" && (u.kind !== "pilot" || u.y > 230)) continue;
+      if (other.kind === "keeper" && (u.kind !== "pilot" || u.y > other.y + 81)) continue;
       const d = distance(u, other);
       if (d <= nearest) {
         best = other;
@@ -421,7 +426,8 @@ const Yard = (() => {
   }
 
   function platforms(m) {
-    return m.bridge > 0 ? [...ledges, bridgeDeck] : ledges;
+    const arena = mapFor(m);
+    return m.bridge > 0 && arena.bridge ? [...arena.platforms, arena.bridge] : arena.platforms;
   }
 
   function keeperStep(m, u, dt, hits) {
@@ -487,7 +493,7 @@ const Yard = (() => {
     );
     for (const other of m.units) {
       if (other.hp <= 0 || distance(u, other) > size) continue;
-      if (other.kind === "keeper" && u.y > 230) continue;
+      if (other.kind === "keeper" && u.y > other.y + 81) continue;
       if (other.team === u.team) {
         if (rally && other.speed > 0) {
           const strength = 32 + 5 * u.coilRank;
@@ -572,7 +578,7 @@ const Yard = (() => {
       u.vy = 65;
     }
     if (k.buy || k.drive || k.coil) upgrade(u, k.drive ? "drive" : k.coil ? "coil" : "gun");
-    if (k.crane && switches.some((x) => Math.abs(u.x - x) < 65) && Math.abs(u.y - 208) < 35) {
+    if (k.crane && mapFor(m).switches.some((x) => Math.abs(u.x - x) < 65) && Math.abs(u.y - mapFor(m).switchY) < 35) {
       m.bridge = 10;
       note(u, "Crossing open");
     } else if (k.crane) note(u, "Reach an upper crane switch");
@@ -600,11 +606,12 @@ const Yard = (() => {
           effect(m, boost ? "boost" : "kick", u, boost ? 30 : 20, 0.22, u.y);
           u.dashLeft = 0;
           u.slideLeft = 0;
-          u.vy = -kit.jumpSpeed;
+          const jet = u.grounded && u.y === floor && mapFor(m).jets.some(x => Math.abs(u.x - x) < 28);
+          u.vy = jet ? -620 : -kit.jumpSpeed;
           u.jumps++;
           u.jumpBuffer = 0;
           u.grounded = false;
-          u.canShortHop = true;
+          u.canShortHop = !jet;
         }
       }
       if (k.jumpRelease && u.canShortHop) {
@@ -642,7 +649,7 @@ const Yard = (() => {
         // External knockback and a committed attack still have their full effect.
         if (!u.slamming && u.recovery <= 0) u.vx = axis * Math.min(50, Math.abs(u.vx));
       }
-      let target = axis * u.speed * (u.slow || 1);
+      let target = axis * u.speed * (u.slow || 1) * (m.surgeUntil?.[u.team] > m.time ? 1.2 : 1);
       if (u.slamming || u.recovery > 0) target *= 0.24;
       let acceleration = u.grounded ? 2600 : 1550;
       if (!u.grounded && !axis) acceleration = Math.abs(u.vx) > u.speed * 1.04 ? 180 : 680;
@@ -718,11 +725,31 @@ const Yard = (() => {
         dash: travel && !target && u.dash <= 0,
       };
     }
+    // New arenas keep one pilot in lane while the other contests their secondary reward.
+    const arena = mapFor(m), objective = arena.objective;
+    if (arena !== mapCatalog.maps.kiln && u.seat < 2 && u.hp > u.max * .45) {
+      const ownSentry = m.units.find(v => v.kind === "sentry" && v.team === u.team);
+      const threatened = ownSentry && m.units.some(v => v.hp > 0 && v.team === 1-u.team && Math.abs(v.x-ownSentry.x)<180);
+      const prizes = m.drops.filter(d => d.type === "supply");
+      const guards = m.units.filter(v => v.kind === "keeper" && v.hp > 0);
+      const goals = [...prizes.map(d => ({x:d.x,y:d.y+17})), ...guards];
+      if (objective.kind === "relay" && m.time >= m.relay.next) goals.push(objective);
+      goals.sort((a,b) => Math.abs(a.x-u.x)-Math.abs(b.x-u.x));
+      const goal = goals[0];
+      if (goal && !threatened) {
+        const dx = goal.x-u.x-u.vx*.08;
+        const jump = u.y > goal.y+4 && Math.abs(dx)<190 && (u.grounded || (u.jumps===1 && u.vy>-90));
+        u.botOrder = { left: dx < -8, right: dx > 8, fire: guards.length > 0,
+          down: u.y < goal.y-8 && Math.abs(dx)<50 };
+        return {...u.botOrder, ...purchase, ...skillOrders, jump, pulse: guards.some(g => distance(u,g)<100) && u.pulse<=0};
+      }
+    }
     // One pilot can rotate. Its teammate keeps pressure in the main lane.
     const prize = m.drops.find((d) => d.type === "cell");
     const keeper = m.units.find((other) => other.kind === "keeper" && other.hp > 0);
     const anchor = m.units.find((other) => other.team === u.team && other.kind === "sentry");
     if (
+      mapFor(m).objective.kind === "vault" &&
       u.seat < 2 &&
       (keeper || prize) &&
       anchor?.hp > 0 &&
@@ -829,7 +856,7 @@ const Yard = (() => {
         u.team === shot.team ||
         u.hp <= 0 ||
         u.spawnGuard > 0 ||
-        (u.kind === "keeper" && !shot.upperShot)
+        (u.kind === "keeper" && (shot.originY === undefined ? !shot.upperShot : shot.originY > u.y + 81))
       )
         continue;
       if (shot.hitIds?.includes(u.id)) continue;
@@ -864,12 +891,23 @@ const Yard = (() => {
     m.tick++;
     if (m.tick === 60 * 270) announce(m, "Reactor meltdown in 30 seconds");
     if (m.tick === 60 * 300) announce(m, "Meltdown · both reactors exposed and losing health");
-    if (!m.training && m.neutralAt !== null && m.time >= m.neutralAt) {
+    const objective = mapFor(m).objective;
+    if (!m.training && objective.kind === "vault" && m.neutralAt !== null && m.time >= m.neutralAt) {
       const keeper = addUnit(m, "keeper", 2, width / 2);
       keeper.y = 149;
       keeper.charge = 0;
       m.neutralAt = null;
       announce(m, "Vault online · siege cell on the upper deck");
+    }
+    if (!m.training && objective.kind === "camps") {
+      m.camps.forEach((camp, index) => {
+        if (camp.next !== null && m.time >= camp.next) {
+          const [x, y] = objective.camps[index], guard = addUnit(m, "keeper", 2, width - x);
+          Object.assign(guard, { x, y, hp: 150, max: 150, damage: 14, range: 95, charge: 0, campId: index });
+          camp.next = null;
+          announce(m, "Supply camps active · raid or defend the lane");
+        }
+      });
     }
     m.nextWave -= dt;
     if (!m.training && m.nextWave <= 0) wave(m);
@@ -1053,7 +1091,7 @@ const Yard = (() => {
     m.mortars = m.mortars.filter((shell) => shell.left > 0);
     for (const drop of m.drops) {
       drop.life -= dt;
-      const cell = drop.type === "cell";
+      const cell = drop.type === "cell" || drop.type === "supply";
       if (!cell) drop.y = Math.min(floor - 13, drop.y + 65 * dt);
       let collector = null,
         nearest = 33,
@@ -1070,7 +1108,14 @@ const Yard = (() => {
           contested = true;
       }
       if (collector && !contested) {
-        if (cell) {
+        if (drop.type === "supply") {
+          m.contracts[collector.team]++;
+          for (const ally of m.units) if (ally.kind === "pilot" && ally.team === collector.team) {
+            ally.scrap += 8;
+            if (ally.hp > 0) ally.hp = Math.min(ally.max, ally.hp + 40);
+          }
+          announce(m, (collector.team ? "Cinder" : "Torch") + " secured supplies · +8 scrap and 40 repair per pilot");
+        } else if (cell) {
           m.convoy[collector.team] = true;
           m.contracts[collector.team]++;
           for (const ally of m.units)
@@ -1085,6 +1130,24 @@ const Yard = (() => {
         collector.farmScrap += drop.amount;
         effect(m, "salvage", collector, 13, 0.22);
         drop.life = 0;
+      }
+    }
+    if (!m.training && objective.kind === "relay" && m.time >= m.relay.next) {
+      const present = [0,1].map(team => m.units.some(u => u.kind === "pilot" && u.hp > 0 && u.team === team &&
+        u.grounded && Math.abs(u.x - objective.x) <= 60 && Math.abs(u.y - objective.y) < 8));
+      if (present[0] !== present[1]) {
+        const team = present[0] ? 0 : 1;
+        if (m.relay.team !== team) { m.relay.team = team; m.relay.progress = 0; }
+        m.relay.progress += dt;
+        if (m.relay.progress + 1e-8 >= objective.capture) {
+          m.surgeUntil[team] = m.time + objective.duration;
+          m.contracts[team]++;
+          m.relay = { team: -1, progress: 0, next: m.time + objective.respawn };
+          announce(m, (team ? "Cinder" : "Torch") + " owns the wind · +20% run speed for 20s");
+        }
+      } else if (!present[0]) {
+        m.relay.progress = Math.max(0, m.relay.progress - dt);
+        if (!m.relay.progress) m.relay.team = -1;
       }
     }
     m.drops = m.drops.filter((d) => d.life > 0);
@@ -1124,6 +1187,9 @@ const Yard = (() => {
       shots: [],
       serial: 0,
       bridge: state.bridge,
+      mapId: state.mapId,
+      time: state.time,
+      surgeUntil: state.surgeUntil,
       zones: [],
       delayed: [],
     };
@@ -1139,6 +1205,8 @@ const Yard = (() => {
     );
   }
   return {
+    maps: mapCatalog.maps,
+    mapFor,
     width,
     floor,
     height,

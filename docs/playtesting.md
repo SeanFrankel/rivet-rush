@@ -68,3 +68,9 @@ Future art experiments use the audience and readability checks in the [design an
 Use the [character guide](characters.md) for engage, counterplay and team-role experiments. The owner requested three melee and three ranged heroes, each with four abilities. Prioritize enjoyable movement into a meaningful MOBA decision: farm, protect, contest, push or reset. Test both sides of each matchup before changing reach or cooldowns; track whether closing distance creates an opening and whether defenders can meaningfully answer it. Keep current art and basic mods during this iteration. Automated cast/prediction checks are not evidence of enjoyment.
 
 [Six-hero implementation and checks](playtests/2026-11-03-roster.md) records the current evidence and next matchup session.
+
+## Three-arena route experiment
+
+Use the [arena guide](maps.md) to compare an escort, an objective rotation and an opponent punishing that rotation. Swap crews on each layout, then let players choose a rematch arena. Record lost farm, reward steals, useful routes, frustrating landings and whether an objective win leads to base pressure. Keep art and hero kits fixed during this comparison.
+
+[Three-arena implementation record](playtests/2026-11-03-arenas.md) separates automated evidence from the open human matchup questions.

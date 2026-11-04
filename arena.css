@@ -545,3 +545,7 @@ footer {
 .kit-picker { display: grid; grid-template-columns: repeat(3, 1fr); }
 .panel-body { max-height: 100%; overflow-y: auto; }
 @media (max-width: 700px) { .ability-bar { grid-template-columns: repeat(2, 1fr); } }
+
+#mapChoice { margin-bottom: 10px; }
+#mapSelect { background: #152431; color: var(--white); border: 1px solid #79b9ab; padding: 5px 10px; }
+.panel #mapInfo { font-size: 11px; line-height: 1.4; margin: 5px 0; }
