@@ -53,9 +53,13 @@ test("incompatible and out-of-order replay inputs fail before playback", () => {
   assert.equal(altered.verified(), false);
 });
 test("the published four-browser match still reaches its recorded reactor kill", () => {
-  const record = require("./fixtures/kiln-02.4-2v2.json");
+  const record = require("./fixtures/kiln-02.5-2v2.json");
   const replay = Replay.load(record);
   while (replay.advance()) {}
   assert.equal(replay.verified(), true);
   assert.equal(replay.game.endReason, "reactor");
+});
+
+test("previous rule recordings explain the matching-build requirement", () => {
+  assert.throws(() => Replay.load(require("./fixtures/kiln-02.4-2v2.json")), /matching/);
 });

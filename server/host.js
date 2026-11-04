@@ -3,7 +3,7 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
-const { randomBytes, timingSafeEqual } = require("node:crypto");
+const { randomBytes, timingSafeEqual, createHash } = require("node:crypto");
 const { performance, createHistogram } = require("node:perf_hooks");
 const { WebSocketServer, WebSocket } = require("ws");
 const Yard = require("../match");
@@ -36,6 +36,9 @@ const equalSecret = (a, b) =>
   timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 function createHost(options = {}) {
+  const release = fs.existsSync(path.join(root, "release.json"))
+    ? require("../tools/release.cjs").verify(root)
+    : null;
   const rooms = new Map();
   const peers = new Set();
   const capacity = options.capacity ?? 4;
@@ -47,6 +50,10 @@ function createHost(options = {}) {
       { mime, data: fs.readFileSync(path.join(root, name)) },
     ]),
   );
+  const fingerprint = createHash("sha256");
+  for (const [url, file] of assets) fingerprint.update(url).update(file.data);
+  fingerprint.update(fs.readFileSync(__filename)).update(build);
+  const revision = fingerprint.digest("hex").slice(0, 16);
   let draining = false;
   let nextTick = performance.now();
   const metrics = {
@@ -66,7 +73,10 @@ function createHost(options = {}) {
     }
     const pathname = req.url.split("?")[0];
     if (pathname === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      });
       return res.end(
         JSON.stringify({
           ok: true,
@@ -74,6 +84,11 @@ function createHost(options = {}) {
           capacity,
           draining,
           build,
+          revision,
+          artifact: release?.artifact || null,
+          rules: Replay.rules,
+          uptimeSeconds: Math.floor(process.uptime()),
+          rssMiB: Math.round((process.memoryUsage().rss / 1048576) * 10) / 10,
           protocol: wire.version,
           playing: [...rooms.values()].filter((room) => room.phase === "play").length,
           completed: metrics.finished,
@@ -188,7 +203,13 @@ function createHost(options = {}) {
     ws.room = room;
     ws.seat = index;
     settleHost(room);
-    send(ws, { type: "seat", room: room.id, seat: index, secret: s.secret, version: wire.version });
+    send(ws, {
+      type: "seat",
+      room: room.id,
+      seat: index,
+      secret: s.secret,
+      version: wire.version,
+    });
     lobby(room);
     if (room.game) snapshot(room, ws);
   }
@@ -204,7 +225,10 @@ function createHost(options = {}) {
     else broadcast(room, packet);
   }
   function begin(room) {
-    room.game = Yard.create({ teamSize: 2, kits: room.seats.map((s) => s?.kit) });
+    room.game = Yard.create({
+      teamSize: 2,
+      kits: room.seats.map((s) => s?.kit),
+    });
     room.recorder = Replay.recorder(room.game);
     room.matchId = token(8);
     room.phase = "play";
@@ -215,6 +239,7 @@ function createHost(options = {}) {
         s.presses = [];
         s.applied = -1;
         s.replaySent = false;
+        s.signalAt = -Infinity;
       }
     emit({
       event: "match_started",
@@ -269,6 +294,34 @@ function createHost(options = {}) {
 
     const s = room.seats[ws.seat];
     switch (msg.type) {
+      case "signal": {
+        if (room.phase !== "play" || msg.matchId !== room.matchId) return;
+        if (
+          !["rally", "retreat"].includes(msg.kind) ||
+          !Number.isInteger(msg.x) ||
+          msg.x < 20 ||
+          msg.x > Yard.width - 20 ||
+          !Number.isInteger(msg.y) ||
+          msg.y < 55 ||
+          msg.y > Yard.floor
+        )
+          return;
+        const now = room.game.time;
+        if (now - (s.signalAt ?? -Infinity) < 3) return;
+        s.signalAt = now;
+        const packet = {
+          type: "signal",
+          matchId: room.matchId,
+          seat: ws.seat,
+          kind: msg.kind,
+          x: msg.x,
+          y: msg.y,
+          until: now + 5,
+        };
+        for (const [seat, ally] of room.seats.entries())
+          if (seat % 2 === ws.seat % 2 && ally?.ws) send(ally.ws, packet);
+        return;
+      }
       case "leave":
         clearSeat(room, ws.seat, false);
         send(ws, { type: "left" });
@@ -481,7 +534,9 @@ function createHost(options = {}) {
 }
 
 if (require.main === module) {
-  const host = createHost({ onEvent: (event) => console.log(JSON.stringify({ build, ...event })) });
+  const host = createHost({
+    onEvent: (event) => console.log(JSON.stringify({ build, ...event })),
+  });
   const port = Number(process.env.PORT || 8080);
   host.server.listen(port, process.env.BIND_ADDRESS || "127.0.0.1", () => {
     console.log("Rivet Rush listening on", host.server.address());

@@ -1,7 +1,7 @@
 "use strict";
 // Shared wire vocabulary. Held movement survives ticks. Edge actions are consumed once.
 const RivetWire = (() => {
-  const version = 6;
+  const version = 7;
   const held = ["left", "right", "fire", "down"];
   const edges = [
     "jump",
@@ -63,6 +63,7 @@ const RivetWire = (() => {
     "vx",
     "slideLeft",
     "slideCooldown",
+    "recap",
   ];
   const flags = [
     "grounded",
@@ -153,6 +154,16 @@ const RivetWire = (() => {
       mortars: packet.mortars.map((row) => assign({}, mortarFields, row)),
     };
   }
-  return { version, held, edges, encode, decode, edgeMask, maxMask, pack, unpack };
+  return {
+    version,
+    held,
+    edges,
+    encode,
+    decode,
+    edgeMask,
+    maxMask,
+    pack,
+    unpack,
+  };
 })();
 if (typeof module !== "undefined") module.exports = RivetWire;

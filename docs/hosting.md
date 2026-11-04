@@ -39,10 +39,19 @@ The invite fragment identifies a room. Each participant separately receives a se
 
 ## Check a candidate
 
+Build a portable runtime with `npm run release:build`. It prints a directory under `.releases` and a full artifact hash. The allowlist includes the exact client/server, locked dependencies manifest, notices and verifier; local logs, room data, Git metadata and installed development packages are excluded. `sourceCommit` and `sourceDirty` record provenance separately from the exact content hash. A dirty build is labeled as such.
+
+From the printed directory run `node tools/release.cjs verify .`, then `npm ci --omit=dev --ignore-scripts`, then `npm start`. Configure `PORT` and `BIND_ADDRESS` as above. A packaged server verifies its release files on startup and refuses modified or incomplete artifacts. `/health` reports the artifact hash, a runtime content fingerprint, rules, protocol, uptime and process RSS. Keep the whole last-good directory with its production dependencies available for rollback. The manifest detects accidental changes; it is not a cryptographic publisher signature.
+
+From the matching source checkout run `node tools/staging-smoke.cjs https://YOUR-HOST` against a server you operate with a free room. It creates four synthetic players in one private room, exercises a ten-second disconnect/reclaim, completes a full match, verifies the authoritative replay and starts a fresh rematch before leaving. It reports build identity and outcomes without room invites or seat secrets. It can take up to seven minutes. This is an operator check; it does not establish human fun, separate-home-network compatibility or browser usability.
+
+CI builds the package, installs production dependencies, boots that package in a separate process and runs `node tools/artifact-smoke.cjs <release directory>`. A successful workflow uploads the tested runtime as `rivet-rush-<commit>` for 14 days. Download and verify it before deployment; keep the chosen last-good artifact beyond CI's retention window. Deploy the tested pair instead of rebuilding client and server independently.
+
 - Verify `GET /health` returns build, protocol, room counts, completed matches and drain status. Static responses and the room protocol come from one server revision.
 - Run `npm test`, `npm run test:browser` and `npm run test:friends` from the same revision as the candidate. Exercise a Warden and Runner, a real join and a refresh through the public staging URL.
 - At the result screen download the replay. Run `node tools/replay.cjs <file.json>` with the same build and check `verified`. A replay records gameplay inputs and seats. It contains no invite or seat secrets. Keep tester identities out of public issues.
 - The server emits anonymous start/end records with the match ID and result to stdout. Compare those IDs when players disagree. Store an artifact hash and candidate commit in the release record. Set the hosting platform's log retention before inviting friends.
+- Players can save a playtest JSON from Field menu or results. It contains match ID, browser/viewport, scores, rules/protocol and reachable host identity, plus blank observation fields. It contains no invitation, seat secret or automatic upload. Ask testers to fill in the observation fields and share it alongside a replay through your agreed private channel.
 
 ## Drain, restart and roll back
 

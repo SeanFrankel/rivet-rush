@@ -63,8 +63,18 @@ class RivetRoom {
       const secret = saved?.secret || (room === this.room ? this.secret : undefined);
       this.send(
         room
-          ? { type: "join", room, secret, kit: this.preference, version: RivetWire.version }
-          : { type: "create", kit: this.preference, version: RivetWire.version },
+          ? {
+              type: "join",
+              room,
+              secret,
+              kit: this.preference,
+              version: RivetWire.version,
+            }
+          : {
+              type: "create",
+              kit: this.preference,
+              version: RivetWire.version,
+            },
       );
     };
     socket.onmessage = (e) => {
@@ -128,6 +138,10 @@ class RivetRoom {
   }
 
   receive(msg) {
+    if (msg.type === "signal" && this.phase === "play" && msg.matchId === this.matchId) {
+      this.events.signal?.(msg);
+      return;
+    }
     if (msg.type === "replay" && this.phase === "end" && msg.matchId === this.matchId) {
       this.events.replay(msg.record);
       return;

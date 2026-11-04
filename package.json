@@ -1,6 +1,6 @@
 {
   "name": "rivet-rush",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "A side-scrolling arena brawler with private online crew rooms.",
   "engines": {
@@ -13,7 +13,8 @@
     "test:friends": "node tools/friends-drill.cjs",
     "test:network": "node tools/network-drill.cjs",
     "test:soak": "node tools/soak.cjs",
-    "check:docs": "node tools/check-docs.cjs"
+    "check:docs": "node tools/check-docs.cjs",
+    "release:build": "node tools/release.cjs build"
   },
   "dependencies": {
     "ws": "8.22.1"

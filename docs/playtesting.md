@@ -44,7 +44,7 @@ Use the [session record template](playtests/session-template.md) so both complet
 
 **Decision rule.** If the gate fails, isolate the largest source of confusion or repetitive play, change one rule or cue, and repeat. If testers like shooting but ignore the bridge, test its opportunity cost before adding another objective. If finishing a match requires holding buy until upgrades take effect, compare one meaningful upgrade choice with the baseline. Capture counterexamples even when the counts pass.
 
-**Session record to copy.** Date and build · hypothesis and one changed variable · participants and conditions · timestamped observations with numerator/denominator · anonymous player words · rematch offers and acceptances · missed or incomplete matches · keep/change/cut decision · owner, next build and retest. Link each record here and from the relevant roadmap gate. No human session results have been recorded yet.
+**Session record to copy.** Date and build · hypothesis and one changed variable · participants and conditions · timestamped observations with numerator/denominator · anonymous player words · rematch offers and acceptances · missed or incomplete matches · keep/change/cut decision · owner, next build and retest. Link each record here and from the relevant roadmap gate. One informal solo impression has been received (“feels OK”); no structured human session or multiplayer fun result has been recorded.
 
 
 ## Movement and MOBA session for the two-kit build
@@ -52,3 +52,13 @@ Use the [session record template](playtests/session-template.md) so both complet
 Start in **Movement run**. Give the tester one lap to find a route, then let them decide whether to retry it. Record where they intended a short hop, dash leap, drop or slide, what happened, and whether they could repeat the move. Record completion time as context. Faster alone does not establish better feel.
 
 In a private 2v2, ask a duo to pick their own pilots and spend their first 12 scrap. Observe a last hit or pickup, their first contested objective, what their teammate contributed and whether a won fight led to structure damage. Ask both teams which move they would make differently next time. Record voluntary rematches separately from requested role swaps. [Engineering evidence and remaining human gates](playtests/2026-11-03-foundations.md)
+
+## Teamplay feedback iteration
+
+The 0.2.1 iteration keeps combat balance, movement and the map fixed while improving information. Test three hypotheses: extra farm feedback helps a pilot connect last hits to a deliberate purchase; an ally status panel and crew-only rally/retreat signal enable a coordinated push without voice; recent-damage feedback helps a downed pilot choose a response. The opponent can still exploit a poorly timed rotation, interrupt the escort or punish a committed dive. Signals create no combat effect.
+
+Start with two short matches using swapped crews. Observe whether a signal produces a useful action or distracts the teammate. Record accidental signals and ignored calls. Ask the player to describe and then demonstrate a response after a death; distinguish repeating a field tip from successfully using it. Record whether tips were enabled and whether any live coaching occurred. Keep field tips optional and cut signals if they add clutter without improving coordination. Shield-given totals show support activity, not whether the barrier prevented damage or won a fight.
+
+The [teamplay engineering record](playtests/2026-11-03-teamplay.md) tracks implementation and automated checks. It does not replace these observations. Export the playtest report and replay from the tested build, fill the report's observation fields, and attach anonymous findings to a session record.
+
+Future art experiments use the audience and readability checks in the [design and art principles proposal](art-direction.md), after owner review. Current mechanics sessions retain the existing art and assets. Do not treat proposed art-test thresholds as measured results or as replacements for the MOBA fun gates.

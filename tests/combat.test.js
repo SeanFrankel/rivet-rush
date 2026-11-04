@@ -15,6 +15,43 @@ function arena(teamSize = 1, kits = {}) {
 }
 const pilots = (m) => m.units.filter((u) => u.kind === "pilot").sort((a, b) => a.seat - b.seat);
 
+test("death recap counts actual recent HP loss, excludes barriers and clears on respawn", () => {
+  const m = arena(),
+    [p, rival] = pilots(m);
+  p.x = 600;
+  rival.x = 1000;
+  function shot(damage) {
+    m.shots.push({
+      id: ++m.serial,
+      source: rival.id,
+      team: 1,
+      x: p.x,
+      y: p.y - 17,
+      vx: 0,
+      vy: 0,
+      damage,
+      left: 60,
+    });
+    ticks(m, 1);
+  }
+  p.barrier = 20;
+  p.barrierTime = 10;
+  shot(12);
+  assert.deepEqual(p.recentHits, []);
+  shot(18); // 8 shield + 10 HP
+  assert.equal(p.hp, 140);
+  ticks(m, 361);
+  shot(30);
+  shot(999); // overkill counts only remaining 110 HP
+  assert.deepEqual(p.recap, [["Arc Runner", 140]]);
+  const copy = wire.unpack(wire.pack(m), Yard.stats, Yard.kits).units.find((u) => u.seat === 0);
+  assert.deepEqual(copy.recap, p.recap);
+  ticks(m, 301);
+  assert.equal(p.hp, p.max);
+  assert.deepEqual(p.recap, []);
+  assert.deepEqual(p.recentHits, []);
+});
+
 test("a clean dash can pass a rivet; a damaging lunge gives up that protection", () => {
   function exchange(attack) {
     const m = arena(),

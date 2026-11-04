@@ -4,7 +4,7 @@
 const RivetReplay = (() => {
   const wire = typeof module !== "undefined" ? require("./protocol") : RivetWire;
   const yard = typeof module !== "undefined" ? require("./match") : Yard;
-  const rules = "kiln-02.4";
+  const rules = "kiln-02.5";
   const stride = wire.maxMask + 1;
   const limit = 60 * 420;
   function inputCode(input) {
@@ -14,7 +14,10 @@ const RivetReplay = (() => {
     return wire.encode(input) + stride * aim;
   }
   function inputFrom(code) {
-    return { ...wire.decode(code % stride), aim: Math.floor(code / stride) - 1 };
+    return {
+      ...wire.decode(code % stride),
+      aim: Math.floor(code / stride) - 1,
+    };
   }
   function signature(game) {
     // Compare the replicated state at a tick, including positions, HP, economy and results.
@@ -90,7 +93,10 @@ const RivetReplay = (() => {
         throw Error("Invalid replay sequence.");
       previous = order;
     }
-    const game = yard.create({ teamSize: record.kits.length / 2, kits: record.kits });
+    const game = yard.create({
+      teamSize: record.kits.length / 2,
+      kits: record.kits,
+    });
     const inputs = {};
     let cursor = 0;
     function advance() {

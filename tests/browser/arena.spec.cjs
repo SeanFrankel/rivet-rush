@@ -60,6 +60,24 @@ test("four private seats deploy, reconnect and leave through the real lobby", as
     for (const p of pages) await p.getByRole("button", { name: "Ready up" }).click();
     await host.getByRole("button", { name: "Deploy crew" }).click();
     for (const p of pages) await expect(p.locator("#connection")).toHaveText("LIVE · PRIVATE");
+    await host.keyboard.press("g");
+    await expect(pages[2].locator("#teamSignal")).toHaveText("Teammate: rally here");
+    await expect(guest.locator("#teamSignal")).toHaveText("");
+    await expect(host.locator("#teamSignal")).toHaveText("You: rally here");
+    await host.keyboard.press("h");
+    await expect(host.locator("#teamSignal")).toHaveText("You: rally here");
+    await host.getByRole("button", { name: "Field menu" }).click();
+    const reportReady = host.waitForEvent("download");
+    await host.getByRole("button", { name: "Save playtest report" }).click();
+    const reportDownload = await reportReady;
+    const reportText = require("node:fs").readFileSync(await reportDownload.path(), "utf8");
+    const report = JSON.parse(reportText);
+    expect(report.format).toBe("rivet-playtest");
+    expect(report.pilots).toHaveLength(4);
+    expect(report.host.revision).toMatch(/^[a-f0-9]{16}$/);
+    const secrets = await host.evaluate(() => [room.secret, room.room, location.href]);
+    for (const secret of secrets) expect(reportText).not.toContain(secret);
+    await host.getByRole("button", { name: "Resume fight" }).click();
     const original = await guest.evaluate(() => ({
       seat: room.seat,
       id: room.matchId,
@@ -74,7 +92,10 @@ test("four private seats deploy, reconnect and leave through the real lobby", as
       .toBeLessThan(original.x - 10);
     await guest.reload();
     await expect(guest.locator("#connection")).toHaveText("LIVE · PRIVATE");
-    const again = await guest.evaluate(() => ({ seat: room.seat, id: room.matchId }));
+    const again = await guest.evaluate(() => ({
+      seat: room.seat,
+      id: room.matchId,
+    }));
     expect(again).toEqual({ seat: original.seat, id: original.id });
     await guest.getByRole("button", { name: "Field menu" }).click();
     await guest.getByRole("button", { name: "Return to title" }).click();
@@ -83,6 +104,51 @@ test("four private seats deploy, reconnect and leave through the real lobby", as
   } finally {
     for (const context of contexts) await context.close();
   }
+});
+
+test("mod choices expose tiers, affordability and actual purchase effects", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play skirmish" }).click();
+  await expect(page.locator("#driveMod")).toBeDisabled();
+  await expect(page.locator("#fieldTip")).toContainText("FIRST WAVE");
+  const controlsBottom = await page
+    .locator(".quick-keys")
+    .evaluate((node) => node.getBoundingClientRect().bottom);
+  expect(controlsBottom).toBeLessThanOrEqual(720);
+  await page.evaluate(() => {
+    match.player.scrap = 12;
+  });
+  await expect(page.locator("#driveMod")).toBeEnabled();
+  await expect(page.locator("#buildHint")).toContainText("MOD READY");
+  await page.locator("#driveMod").click();
+  await expect(page.locator("#driveMod")).toContainText("1/3");
+  expect(await page.evaluate(() => match.player.max)).toBe(168);
+  await expect(page.locator("#driveMod")).toBeDisabled();
+  await expect(page.locator("#buildHint")).toContainText("20 more scrap");
+  await page.keyboard.press("g");
+  await expect(page.locator("#teamSignal")).toContainText("rally here");
+  await page.screenshot({ path: ".tmp/teamplay-hud.png" });
+  await page.getByRole("button", { name: "Tips on" }).click();
+  await expect(page.locator("#fieldTip")).toBeHidden();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Tips off" })).toBeVisible();
+});
+
+test("a sentry death displays a recent damage recap before respawning", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play skirmish" }).click();
+  // Controlled setup; the ordinary sentry acquires, warns, fires and kills.
+  await page.evaluate(() => {
+    match.player.x = 1295;
+    match.player.hp = 12;
+  });
+  await page.waitForFunction(() => match.player.hp === 0);
+  expect(await page.evaluate(() => match.player.downedBy)).toBe("sentry");
+  expect(await page.evaluate(() => match.player.recap)).toEqual([["sentry", 12]]);
+  await page.screenshot({ path: ".tmp/death-recap.png" });
+  await page.waitForFunction(() => match.player.hp > 0);
+  expect(await page.evaluate(() => match.player.recap)).toEqual([]);
 });
 
 test("the Warden can complete all three training drills using normal inputs", async ({ page }) => {
@@ -139,13 +205,11 @@ test("a saved input trace plays back, switches camera seat, and verifies its res
   }
   const record = capture.export(match);
   await page.goto("/");
-  await page
-    .locator("#replayFile")
-    .setInputFiles({
-      name: "match.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(record)),
-    });
+  await page.locator("#replayFile").setInputFiles({
+    name: "match.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(record)),
+  });
   await expect(page.locator("#connection")).toHaveText("REPLAY");
   await page.getByRole("button", { name: "Follow next pilot" }).click();
   expect(await page.evaluate(() => match.player.seat)).toBe(1);

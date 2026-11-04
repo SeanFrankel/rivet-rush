@@ -18,3 +18,12 @@ jobs:
       - run: npm run test:browser
         env:
           RIVET_ENGINE: firefox
+      - run: node tools/release.cjs build .tmp/ci-release
+      - run: npm ci --omit=dev --ignore-scripts
+        working-directory: .tmp/ci-release
+      - run: node tools/artifact-smoke.cjs .tmp/ci-release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rivet-rush-${{ github.sha }}
+          path: .tmp/ci-release
+          retention-days: 14

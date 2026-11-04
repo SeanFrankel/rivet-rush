@@ -14,12 +14,60 @@ const Yard = (() => {
   const bridgeDeck = [755, 1025, 208];
   const switches = [715, width - 715];
   const stats = {
-    pilot: { max: 150, speed: 205, range: 248, damage: 10, rate: 0.26, height: 34, radius: 12 },
-    crawler: { max: 48, speed: 46, range: 142, damage: 7, rate: 0.95, height: 19, radius: 12 },
-    breaker: { max: 125, speed: 41, range: 182, damage: 10, rate: 1.1, height: 29, radius: 17 },
-    keeper: { max: 245, speed: 0, range: 125, damage: 22, rate: 2.15, height: 40, radius: 18 },
-    sentry: { max: 320, speed: 0, range: 238, damage: 12, rate: 0.82, height: 48, radius: 18 },
-    reactor: { max: 540, speed: 0, range: 120, damage: 8, rate: 1.1, height: 70, radius: 23 },
+    pilot: {
+      max: 150,
+      speed: 205,
+      range: 248,
+      damage: 10,
+      rate: 0.26,
+      height: 34,
+      radius: 12,
+    },
+    crawler: {
+      max: 48,
+      speed: 46,
+      range: 142,
+      damage: 7,
+      rate: 0.95,
+      height: 19,
+      radius: 12,
+    },
+    breaker: {
+      max: 125,
+      speed: 41,
+      range: 182,
+      damage: 10,
+      rate: 1.1,
+      height: 29,
+      radius: 17,
+    },
+    keeper: {
+      max: 245,
+      speed: 0,
+      range: 125,
+      damage: 22,
+      rate: 2.15,
+      height: 40,
+      radius: 18,
+    },
+    sentry: {
+      max: 320,
+      speed: 0,
+      range: 238,
+      damage: 12,
+      rate: 0.82,
+      height: 48,
+      radius: 18,
+    },
+    reactor: {
+      max: 540,
+      speed: 0,
+      range: 120,
+      damage: 8,
+      rate: 1.1,
+      height: 70,
+      radius: 23,
+    },
   };
   const kits = {
     runner: {
@@ -118,6 +166,8 @@ const Yard = (() => {
       respawn: 0,
       spawnGuard: 0,
       downedBy: "",
+      recentHits: [],
+      recap: [],
       kills: 0,
       deaths: 0,
       damageDealt: 0,
@@ -164,7 +214,10 @@ const Yard = (() => {
     const pilot = m.units.find((u) => u.kind === "pilot" && u.seat === seat);
     Object.defineProperty(m, "player", { configurable: true, value: pilot });
     for (const key of ["pulse", "scrap", "rank", "notice", "note"]) {
-      Object.defineProperty(m, key, { configurable: true, get: () => pilot[key] });
+      Object.defineProperty(m, key, {
+        configurable: true,
+        get: () => pilot[key],
+      });
     }
     return m;
   }
@@ -253,6 +306,12 @@ const Yard = (() => {
     if (attacker?.kind === "pilot") attacker.damageDealt += Math.min(damage, u.hp);
     if (attacker?.kind === "pilot" && u.speed === 0)
       attacker.objectiveDamage += Math.min(damage, u.hp);
+    if (u.kind === "pilot") {
+      const source =
+        attacker?.kind === "pilot" ? kits[attacker.kit].name : attacker?.kind || "enemy fire";
+      u.recentHits = u.recentHits.filter((h) => m.tick - h[0] <= 360);
+      u.recentHits.push([m.tick, source, Math.min(damage, u.hp)]);
+    }
     u.hp = Math.max(0, u.hp - damage);
     u.flash = 0.12;
     if (u.hp > 0) return;
@@ -293,6 +352,10 @@ const Yard = (() => {
     if (u.kind === "pilot") {
       u.respawn = Math.min(9, 5 + Math.floor(m.time / 75));
       u.deaths++;
+      const totals = new Map();
+      for (const [, source, amount] of u.recentHits)
+        totals.set(source, (totals.get(source) || 0) + amount);
+      u.recap = [...totals].sort((a, b) => b[1] - a[1]);
       u.downedBy =
         attacker?.kind === "pilot" ? kits[attacker.kit].name : attacker?.kind || "enemy fire";
       if (attacker?.kind === "pilot") attacker.kills++;
@@ -652,7 +715,11 @@ const Yard = (() => {
         const angle = Math.atan2(middle(target) - middle(u), target.x - u.x);
         u.botOrder.aim = (Math.round((angle * 128) / Math.PI) + 256) % 256;
       }
-      return { ...u.botOrder, ...purchase, dash: travel && !target && u.dash <= 0 };
+      return {
+        ...u.botOrder,
+        ...purchase,
+        dash: travel && !target && u.dash <= 0,
+      };
     }
     // One pilot can rotate. Its teammate keeps pressure in the main lane.
     const prize = m.drops.find((d) => d.type === "cell");
@@ -672,7 +739,11 @@ const Yard = (() => {
       const jumping = u.crossVault
         ? Math.abs(u.x - width / 2) < 182 && u.y > 150
         : Math.abs(u.x - stage) < 45;
-      u.botOrder = { left: dx < -6, right: dx > 6, fire: !!keeper && u.y <= 230 };
+      u.botOrder = {
+        left: dx < -6,
+        right: dx > 6,
+        fire: !!keeper && u.y <= 230,
+      };
       return {
         ...u.botOrder,
         ...purchase,
@@ -684,7 +755,11 @@ const Yard = (() => {
     const direction = Math.sign(dx) || u.dir;
     const spacing = u.seat < 2 ? 140 : 91;
     const drive = Math.abs(dx) > spacing || (target && u.dir !== direction);
-    const order = { left: drive && direction < 0, right: drive && direction > 0, fire: !!target };
+    const order = {
+      left: drive && direction < 0,
+      right: drive && direction > 0,
+      fire: !!target,
+    };
     u.botOrder = order;
     const opponent = target?.kind === "pilot";
     const near = target && distance(u, target) < 104;
@@ -707,6 +782,8 @@ const Yard = (() => {
 
   function respawn(u) {
     Object.assign(u, {
+      recentHits: [],
+      recap: [],
       x: mirror(u.team, u.spawn),
       y: floor,
       hp: u.max,
@@ -927,7 +1004,11 @@ const Yard = (() => {
       shot.left -= 600 * dt;
       if (victim) {
         const damage = shot.siege && victim.speed === 0 ? shot.damage * 3 : shot.damage;
-        hits.push({ target: victim, damage, source: m.units.find((u) => u.id === shot.source) });
+        hits.push({
+          target: victim,
+          damage,
+          source: m.units.find((u) => u.id === shot.source),
+        });
         shot.left = 0;
       }
     }
@@ -1013,7 +1094,13 @@ const Yard = (() => {
   function predictPilot(state, pilot, controls) {
     if (!pilot.hp) return;
     // Only replay this pilot's movement. Hits and purchases come from the server.
-    const local = { units: [pilot], fx: [], shots: [], serial: 0, bridge: state.bridge };
+    const local = {
+      units: [pilot],
+      fx: [],
+      shots: [],
+      serial: 0,
+      bridge: state.bridge,
+    };
     pilot.knock *= 1 - 7 * stepSeconds;
     pilotStep(
       local,

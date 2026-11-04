@@ -50,6 +50,49 @@ async function fixture(t, options = {}) {
   return { host, port, client, create, join };
 }
 
+test("team signals are bounded, rate limited and isolated from enemies and other rooms", async (t) => {
+  const f = await fixture(t),
+    { c, seat } = await f.create();
+  const enemy = await f.join(seat.room);
+  await enemy.take("seat");
+  const ally = await f.join(seat.room);
+  await ally.take("seat");
+  const other = await f.create();
+  for (const p of [c, enemy, ally]) p.send({ type: "ready", ready: true });
+  await c.take("lobby", (m) => m.seats.filter(Boolean).every((s) => s.ready));
+  c.send({ type: "start" });
+  const state = await c.take("state");
+  const signal = {
+    type: "signal",
+    matchId: state.matchId,
+    kind: "rally",
+    x: 890,
+    y: 149,
+    seat: 1,
+  };
+  c.send({ ...signal, x: -50 });
+  c.send({ ...signal, matchId: "old" });
+  c.send({ ...signal, kind: "arbitrary text" });
+  c.send(signal);
+  const received = await ally.take("signal");
+  assert.equal(received.seat, 0);
+  assert.equal(received.x, 890);
+  await c.take("signal");
+  c.send({ ...signal, kind: "retreat" });
+  await wait(100);
+  assert.equal(ally.messages.filter((m) => m.type === "signal").length, 0);
+  assert.equal(enemy.messages.filter((m) => m.type === "signal").length, 0);
+  assert.equal(other.c.messages.filter((m) => m.type === "signal").length, 0);
+  // Reconnect cannot bypass the cooldown kept on the reserved seat.
+  c.ws.close();
+  await once(c.ws, "close");
+  const back = await f.join(seat.room, seat.secret);
+  await back.take("seat");
+  back.send(signal);
+  await wait(100);
+  assert.equal(ally.messages.filter((m) => m.type === "signal").length, 0);
+});
+
 test("the private room enforces capacity, build compatibility, readiness and kit ownership", async (t) => {
   const f = await fixture(t, { capacity: 1 });
   const { c, seat } = await f.create();
@@ -154,7 +197,12 @@ test("a rematch creates a clean world and rejects commands from the finished mat
   assert.notEqual(next.matchId, first.matchId);
   assert.equal(room.game.wave, 1);
   assert.equal(room.game.player.rank, 0);
-  c.send({ type: "input", seq: 55, matchId: first.matchId, mask: wire.encode({ right: true }) });
+  c.send({
+    type: "input",
+    seq: 55,
+    matchId: first.matchId,
+    mask: wire.encode({ right: true }),
+  });
   await c.take("state", (m) => m.matchId === next.matchId && m.game.tick > 4);
   assert.equal(room.game.player.x, 165);
 });

@@ -26,10 +26,15 @@ Open [the local game](http://127.0.0.1:8080), choose **Private room**, select a 
 | Fire the gauntlet | Hold J for assisted forward fire. Left mouse aims and fires toward the pointer. |
 | Use your pilot ability | K or right-click. From the air, the attack lands as a dive. Warden also shields allied pilots and crawlers. |
 | Buy a mod | 1 for rivets, 2 for the drive, 3 for coils. The rig shows the next scrap price. |
+| Signal your crew | G rallies, H calls a retreat. Point inside the arena to mark a location, or move the cursor outside it to mark your pilot. Signals last five seconds, with a three-second cooldown. Bots keep their own plans. |
 | Operate a crossing, check the score, open the menu | E by either upper switch, hold Tab, Escape. |
 
 Walk with your first crawler wave. Land the finishing shot on enemy crawlers for bonus scrap, then collect the dropped salvage before an opponent takes it. Use a friendly Breaker to push the sentry. Fall back near your reactor to repair. After the enemy sentry falls, finish its reactor. At five minutes both reactors enter meltdown. Escort a Breaker past midfield to earn a charged base shot. A pilot or NPC still has to deliver the final hit. If both bases hold for seven minutes, the match is a draw.
 
 At the result screen, **Save match replay** exports an anonymous input recording. Open **Watch replay** on the title screen to view it on the matching build, switch pilots or speed up playback.
+
+Your rig shows each mod track's purchased tiers and what the next mod costs. Last hits and collected salvage display extra scrap above your pilot. **Tips on/off** controls optional advice about farming, repairing and objectives. The setting stays on this browser. While downed, the camera follows a surviving teammate and a recap shows recent HP loss by source. Hold Tab to compare farming, siege damage and shielding as well as KOs.
+
+For a bug or playtest observation, open **Field menu → Save playtest report**, or save it at the result screen. The JSON contains match/build information and scores, with blank observation fields you can fill in. It excludes room invitations and seat secrets and sends nothing automatically. Pair it with a replay when possible. Tactical signals are live communication and are not included in replays.
 
 The [game handbook](docs/README.md) contains the rules, test procedures and beta roadmap. Contributors should start with [AGENTS.md](AGENTS.md). Third-party licenses and asset provenance are recorded in [THIRD_PARTY.md](THIRD_PARTY.md).

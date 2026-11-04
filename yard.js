@@ -12,7 +12,15 @@ let match = Yard.create({ teamSize: 2 }),
   teamSize = 2;
 const held = new Set(),
   pressed = new Set();
-const mouse = { x: 0, y: 0, fire: false };
+const mouse = { x: 0, y: 0, fire: false, inside: false };
+let signals = [],
+  signalAt = -Infinity;
+let farmSample = null,
+  farmPopups = [];
+let tipsEnabled = true;
+try {
+  tipsEnabled = localStorage.getItem("rivet-tips") !== "off";
+} catch {}
 const sounds = new YardSound();
 const yardArt = new Image();
 yardArt.src = "assets/kiln-yard.jpg";
@@ -602,7 +610,130 @@ function worldHUD() {
         9,
       );
     }
+    const ally = match.units.find(
+      (u) => u.kind === "pilot" && u.team === team && u.seat !== match.player.seat,
+    );
+    if (ally) {
+      box(738, 365, 208, 44, "#132633ef");
+      label("ALLY · " + Yard.kits[ally.kit].name.toUpperCase(), 747, 380, palette[team], 10);
+      label(
+        ally.hp
+          ? Math.ceil(ally.hp) + "/" + ally.max + " HP · RIG " + ally.rank
+          : "REDEPLOY " + Math.ceil(ally.respawn) + "s",
+        747,
+        394,
+        "#e6e2d9",
+        10,
+      );
+      label(
+        ally.hp
+          ? (ally.x < match.player.x - 80
+              ? "← LEFT"
+              : ally.x > match.player.x + 80
+                ? "RIGHT →"
+                : "NEARBY") + " · G rally / H retreat"
+          : "Hold the wave until they return",
+        747,
+        405,
+        "#abbec2",
+        9,
+      );
+    }
   }
+}
+function receiveSignal(signal) {
+  signals = signals.filter((s) => s.seat !== signal.seat && s.until > match.time);
+  signals.push(signal);
+  el("teamSignal").textContent =
+    (signal.seat === match.player.seat ? "You" : "Teammate") +
+    (signal.kind === "retreat" ? ": retreat" : ": rally here");
+}
+function sendSignal(kind) {
+  if (mode !== "play" || match.training || match.time - signalAt < 3) return;
+  signalAt = match.time;
+  const x = Math.round(
+    Math.max(20, Math.min(Yard.width - 20, mouse.inside ? mouse.x + camera : match.player.x)),
+  );
+  const y = Math.round(
+    Math.max(55, Math.min(Yard.floor, mouse.inside ? mouse.y : match.player.y - 44)),
+  );
+  if (room.phase === "play") room.send({ type: "signal", matchId: room.matchId, kind, x, y });
+  else
+    receiveSignal({
+      seat: match.player.seat,
+      kind,
+      x,
+      y,
+      until: match.time + 5,
+    });
+}
+function drawSignals() {
+  signals = signals.filter((s) => s.until > match.time);
+  if (!signals.length) el("teamSignal").textContent = "";
+  for (const s of signals) {
+    const x = Math.max(30, Math.min(930, s.x - camera)),
+      y = Math.max(92, Math.min(322, s.y));
+    const color = s.kind === "retreat" ? "#ffd591" : "#b5ffee";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (s.kind === "rally") ctx.arc(x, y, 12, 0, Math.PI * 2);
+    else {
+      ctx.moveTo(x, y - 12);
+      ctx.lineTo(x + 12, y + 10);
+      ctx.lineTo(x - 12, y + 10);
+      ctx.closePath();
+    }
+    ctx.stroke();
+    label(s.kind === "rally" ? "+" : "!", x - 4, y + 4, color, 13);
+    ctx.textAlign = "center";
+    label(
+      (s.x - camera < 30 ? "← " : "") +
+        (s.kind === "rally" ? "RALLY" : "RETREAT") +
+        (s.x - camera > 930 ? " →" : ""),
+      x,
+      y - 18,
+      color,
+      10,
+    );
+    ctx.textAlign = "left";
+  }
+}
+function drawFarmFeedback() {
+  const p = match.player;
+  if (farmSample && farmSample.seat === p.seat && match.tick > farmSample.tick && mode === "play") {
+    const hits = p.lastHits - farmSample.hits,
+      gain = p.farmScrap - farmSample.scrap;
+    if (gain > 0) {
+      farmPopups.push({
+        x: p.x,
+        y: p.y - 52,
+        at: match.time,
+        text:
+          "+" +
+          gain +
+          " SCRAP · " +
+          (hits > 0 ? "LAST HIT" + (gain > hits * 2 ? " + SALVAGE" : "") : "SALVAGE"),
+      });
+      farmPopups = farmPopups.slice(-3);
+    }
+  } else if (!farmSample || farmSample.seat !== p.seat || match.tick < farmSample.tick)
+    farmPopups = [];
+  farmSample = {
+    seat: p.seat,
+    tick: match.tick,
+    hits: p.lastHits,
+    scrap: p.farmScrap,
+  };
+  farmPopups = farmPopups.filter((f) => match.time - f.at < 1.5);
+  ctx.textAlign = "center";
+  for (const [i, f] of farmPopups.entries()) {
+    const age = match.time - f.at;
+    ctx.globalAlpha = Math.min(1, (1.5 - age) * 2);
+    label(f.text, f.x, f.y - i * 14 - (reducedMotion ? 0 : age * 16), "#fff0a6", 10);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "left";
 }
 const lessonText = [
   "Double jump, then press Shift in the air",
@@ -612,7 +743,11 @@ const lessonText = [
 ];
 function draw() {
   const p = match.player;
-  camera = Math.max(0, Math.min(Yard.width - 960, p.x - 450));
+  const watching =
+    !p.hp && mode !== "replay"
+      ? match.units.find((u) => u.kind === "pilot" && u.team === p.team && u.hp)
+      : null;
+  camera = Math.max(0, Math.min(Yard.width - 960, (watching || p).x - 450));
   backdrop();
   ctx.save();
   ctx.translate(-camera, 0);
@@ -664,8 +799,15 @@ function draw() {
     circle(x, y, 3, "#fff0bb");
   }
   for (const f of match.fx) drawEffect(f);
+  drawFarmFeedback();
   ctx.restore();
   worldHUD();
+  drawSignals();
+  if (watching) {
+    ctx.textAlign = "center";
+    label("WATCHING ALLY · " + Yard.kits[watching.kit].name.toUpperCase(), 480, 88, "#c8e7df", 10);
+    ctx.textAlign = "left";
+  }
   if (match.announcementUntil > match.time && !held.has("Tab")) {
     ctx.textAlign = "center";
     box(240, 54, 480, 19, "#172735e8");
@@ -699,26 +841,74 @@ function draw() {
     label((lesson < 3 ? lesson + 1 + "/3   " : "") + lessonText[lesson], 480, 398, "#ffe1ac", 14);
     ctx.textAlign = "left";
   } else if (match.notice > 0 || !p.hp) {
-    box(295, 365, 370, 30, "#172935");
+    box(225, p.hp ? 365 : 295, 510, p.hp ? 30 : 64, "#172935f5");
     ctx.textAlign = "center";
     label(
       !p.hp
         ? "DOWNED BY " + p.downedBy.toUpperCase() + "  ·  REDEPLOY " + Math.ceil(p.respawn) + "s"
         : match.note,
       480,
-      385,
+      p.hp ? 385 : 313,
       "#ffd696",
       13,
     );
+    if (!p.hp) {
+      const recap = (p.recap || [])
+        .slice(0, 3)
+        .map(([source, amount]) => source + " " + Math.round(amount))
+        .join(" · ");
+      label("LAST 6s HP LOST · " + recap, 480, 332, "#c6d6d8", 10);
+      const tip =
+        p.downedBy === "sentry"
+          ? "Let crawlers take the sightline; jump the locked shot."
+          : p.downedBy === "keeper"
+            ? "Leave the Keeper's warning circle before it discharges."
+            : p.downedBy === "reactor"
+              ? "Bring a surviving wave to absorb the reactor's shots."
+              : "Regroup with your ally; save a clean dash to escape.";
+      label(tip, 480, 349, "#ffe0a8", 10);
+    }
     ctx.textAlign = "left";
   }
   pilotHUD();
 }
 function pilotHUD() {
   const p = match.player;
+  el("fieldTip").hidden = !tipsEnabled || match.training || mode !== "play";
+  if (!el("fieldTip").hidden) {
+    const tower = match.units.find((u) => u.kind === "sentry" && u.team !== p.team);
+    const cell = match.drops.some((d) => d.type === "cell");
+    const keeper = match.units.some((u) => u.kind === "keeper" && u.hp);
+    const tip = !p.hp
+      ? "Use this reset to regroup. Your mods and unspent scrap are kept."
+      : p.hp < p.max * 0.35
+        ? "LOW HEALTH · Retreat near your reactor. Repair starts after 2 seconds without damage."
+        : cell
+          ? "SIEGE CELL LOOSE · Touch it on the upper vault deck to reinforce your next wave."
+          : keeper && Math.abs(p.x - 890) < 300 && p.y <= 230
+            ? "VAULT · Fire from the upper decks. Leave the warning circle before the Keeper attacks."
+            : p.farmScrap === 0 && match.time < 50
+              ? "FIRST WAVE · Last-hit enemy crawlers, then collect their glowing salvage for extra scrap."
+              : tower?.hp && match.time < 300
+                ? "SIEGE · Escort a Breaker into the sentry. Friendly crawlers can intercept enemy shots."
+                : "REACTOR EXPOSED · Turn a won fight into base damage. KOs alone do not win the match.";
+    if (el("fieldTip").textContent !== tip) el("fieldTip").textContent = tip;
+  }
   const dash = Math.ceil(p.dash * 10) / 10,
     pulse = Math.ceil(p.pulse * 10) / 10;
-  const key = [p.kit, Math.ceil(p.hp), p.max, dash, pulse, p.scrap, p.rank, p.grounded].join("|");
+  const key = [
+    mode,
+    p.kit,
+    Math.ceil(p.hp),
+    p.max,
+    dash,
+    pulse,
+    p.scrap,
+    p.rank,
+    p.driveRank,
+    p.coilRank,
+    p.grounded,
+  ].join("|");
   if (key === uiKey) return;
   uiKey = key;
   el("pilot").textContent = Math.ceil(p.hp) + " / " + p.max + " HP";
@@ -745,8 +935,36 @@ function pilotHUD() {
     ["driveMod", p.driveRank],
     ["coilMod", p.coilRank],
   ]) {
-    el(id).classList.toggle("available", cost > 0 && p.scrap >= cost && tier < 3);
+    const available = cost > 0 && p.scrap >= cost && tier < 3 && p.hp > 0 && mode === "play";
+    el(id).classList.toggle("available", available);
+    el(id).disabled = !available;
+    const names = { gunMod: "Rivets", driveMod: "Drive", coilMod: "Coils" };
+    const descriptions = {
+      gunMod: "+4 shot damage",
+      driveMod: "+18 HP, dash recharge −0.25s",
+      coilMod: "+4 ability damage, recharge −0.2s" + (p.kit === "warden" ? ", +5 barrier" : ""),
+    };
+    el(id).innerHTML =
+      "<kbd>" +
+      { gunMod: 1, driveMod: 2, coilMod: 3 }[id] +
+      "</kbd> " +
+      names[id] +
+      " " +
+      tier +
+      "/3";
+    el(id).title =
+      tier === 3
+        ? "Track complete"
+        : descriptions[id] + (cost ? " · " + cost + " scrap" : " · Rig complete");
+    el(id).setAttribute("aria-label", names[id] + " " + tier + " of 3. " + el(id).title);
   }
+  el("buildHint").textContent = !cost
+    ? "Build complete · turn your advantage into reactor damage."
+    : !p.hp
+      ? "Mods and scrap survive a death. Plan your next push."
+      : p.scrap >= cost
+        ? "MOD READY · 1 damage · 2 health / dash · 3 ability"
+        : cost - p.scrap + " more scrap to next mod · last-hit NPCs and collect salvage.";
 }
 function clearInput() {
   held.clear();
@@ -773,9 +991,14 @@ function showPanel(state, title, brief, button) {
   el("inviteWrap").hidden = true;
   el("saveReplay").hidden = state !== "end";
   el("saveReplay").disabled = false;
+  el("saveReport").hidden = !["end", "pause", "online-menu"].includes(state);
   if (button) el("start").focus({ preventScroll: true });
 }
 function title() {
+  signals = [];
+  signalAt = -Infinity;
+  farmSample = null;
+  farmPopups = [];
   inviteCode = "";
   trial = null;
   playback = null;
@@ -803,6 +1026,10 @@ function beginPlay() {
   sounds.unlock();
 }
 function startLocal(kind) {
+  signals = [];
+  signalAt = -Infinity;
+  farmSample = null;
+  farmPopups = [];
   localKind = kind;
   trial = null;
   match =
@@ -943,6 +1170,12 @@ const room = new RivetRoom({
   lobby: roomLobby,
   state: (game, fresh) => {
     match = game;
+    if (fresh) {
+      signals = [];
+      signalAt = -Infinity;
+      farmSample = null;
+      farmPopups = [];
+    }
     if (fresh || mode === "connecting" || mode === "lobby") {
       beginPlay();
       el("connection").textContent = "LIVE · PRIVATE";
@@ -950,6 +1183,7 @@ const room = new RivetRoom({
     if (room.phase === "end" && mode !== "end") finish();
   },
   replay: downloadReplay,
+  signal: receiveSignal,
   left: title,
 });
 function downloadReplay(record) {
@@ -966,6 +1200,81 @@ el("saveReplay").onclick = () => {
     el("saveReplay").disabled = true;
     room.send({ type: "replay" });
   } else if (recording) downloadReplay(recording.export(match));
+};
+el("saveReport").onclick = async () => {
+  // Deliberate allowlist: invites, seat secrets, URLs and personal identifiers never enter a report.
+  const report = {
+    format: "rivet-playtest",
+    localSeat: match.player.seat,
+    fieldTips: tipsEnabled,
+    reducedMotion,
+    version: 1,
+    rules: RivetReplay.rules,
+    protocol: RivetWire.version,
+    recordedAt: new Date().toISOString(),
+    mode: room.phase === "offline" ? localKind : "private room",
+    matchId: room.matchId || null,
+    tick: match.tick,
+    winner: match.winner,
+    endReason: match.endReason,
+    browser: navigator.userAgent,
+    viewport: [innerWidth, innerHeight],
+    pilots: match.units
+      .filter((u) => u.kind === "pilot")
+      .map((p) => ({
+        seat: p.seat,
+        kit: p.kit,
+        kills: p.kills,
+        deaths: p.deaths,
+        lastHits: p.lastHits,
+        farmScrap: p.farmScrap,
+        objectiveDamage: Math.round(p.objectiveDamage),
+        shieldGiven: Math.round(p.shieldGiven),
+        mods: {
+          rivets: p.rank - p.driveRank - p.coilRank,
+          drive: p.driveRank,
+          coils: p.coilRank,
+        },
+      })),
+    observations: {
+      whatHappened: "",
+      expected: "",
+      stepsToRepeat: "",
+      movementFeel: "",
+      nextFightIdea: "",
+      wouldRematch: "",
+    },
+  };
+  if (room.supported) {
+    try {
+      const response = await fetch("/health", {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response.ok) {
+        const health = await response.json();
+        report.host = {
+          build: health.build,
+          revision: health.revision,
+          artifact: health.artifact || null,
+          protocol: health.protocol,
+          uptimeSeconds: health.uptimeSeconds,
+          tickP95ms: health.tickP95ms,
+        };
+      }
+    } catch {
+      /* Offline reports remain useful without host metadata. */
+    }
+  }
+  const link = document.createElement("a"),
+    url = URL.createObjectURL(
+      new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }),
+    );
+  link.href = url;
+  link.download = "rivet-playtest-" + (report.matchId || "solo") + ".json";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  el("message").textContent =
+    "Report saved. Add your observations before sharing it with the host.";
 };
 function showKit(kit) {
   for (const b of el("kits").querySelectorAll("button"))
@@ -987,26 +1296,27 @@ for (const b of el("kits").querySelectorAll("button"))
     }
   };
 function drawScores() {
-  box(155, 82, 650, 206, "#10212df5");
-  label("CREW SCORE", 177, 109, "#ffe2a8", 16);
+  box(115, 96, 730, 206, "#10212df5");
+  label("CREW SCORE", 137, 123, "#ffe2a8", 16);
   label(
-    "PILOT                         KO / DOWN     LAST HITS    FARM SCRAP    SIEGE DMG",
-    177,
+    "PILOT                        KO / DOWN    LAST HITS   FARM SCRAP   SIEGE DMG   SHIELD GIVEN",
     137,
+    151,
     "#b3c8c8",
-    11,
+    10,
   );
   const pilots = match.units
     .filter((u) => u.kind === "pilot")
     .sort((a, b) => a.team - b.team || a.seat - b.seat);
   for (const [i, p] of pilots.entries()) {
-    const y = 160 + i * 28,
+    const y = 174 + i * 28,
       c = palette[p.team];
-    label((p === match.player ? "YOU · " : "") + Yard.kits[p.kit].name, 177, y, c, 13);
-    label(p.kills + " / " + p.deaths, 380, y);
-    label(p.lastHits, 479, y);
-    label(p.farmScrap, 565, y);
-    label(Math.round(p.objectiveDamage), 662, y);
+    label((p === match.player ? "YOU · " : "") + Yard.kits[p.kit].name, 137, y, c, 12);
+    label(p.kills + " / " + p.deaths, 320, y);
+    label(p.lastHits, 415, y);
+    label(p.farmScrap, 500, y);
+    label(Math.round(p.objectiveDamage), 595, y);
+    label(Math.round(p.shieldGiven), 700, y);
   }
 }
 function mainAction() {
@@ -1082,6 +1392,18 @@ function soundButton() {
   el("sound").textContent = sounds.enabled ? "Sound on" : "Sound off";
   el("sound").setAttribute("aria-pressed", String(sounds.enabled));
 }
+function tipsButton() {
+  el("tips").textContent = tipsEnabled ? "Tips on" : "Tips off";
+  el("tips").setAttribute("aria-pressed", String(tipsEnabled));
+}
+el("tips").onclick = () => {
+  tipsEnabled = !tipsEnabled;
+  try {
+    localStorage.setItem("rivet-tips", tipsEnabled ? "on" : "off");
+  } catch {}
+  tipsButton();
+};
+tipsButton();
 el("sound").onclick = () => {
   sounds.toggle();
   soundButton();
@@ -1117,6 +1439,11 @@ const keys = new Set([
   "ShiftRight",
 ]);
 window.addEventListener("keydown", (e) => {
+  if (mode === "play" && ["KeyG", "KeyH"].includes(e.code) && !e.repeat) {
+    e.preventDefault();
+    sendSignal(e.code === "KeyG" ? "rally" : "retreat");
+    return;
+  }
   if (trial && e.code === "KeyR" && !e.repeat) {
     e.preventDefault();
     startLocal("trial");
@@ -1154,11 +1481,15 @@ window.addEventListener("blur", () => {
   else pause();
 });
 function pointer(e) {
+  mouse.inside = true;
   const bounds = canvas.getBoundingClientRect();
   mouse.x = ((e.clientX - bounds.left) * canvas.width) / bounds.width;
   mouse.y = ((e.clientY - bounds.top) * canvas.height) / bounds.height;
 }
 canvas.addEventListener("pointermove", pointer);
+canvas.addEventListener("pointerleave", () => {
+  mouse.inside = false;
+});
 canvas.addEventListener("pointerdown", (e) => {
   if (mode !== "play") return;
   pointer(e);

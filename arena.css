@@ -476,6 +476,45 @@ footer {
 .quick-keys kbd {
   color: var(--white);
 }
+.match-guidance {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 20px;
+  margin-top: 7px;
+  font:
+    12px Consolas,
+    monospace;
+  color: #c5d5d5;
+}
+#teamSignal {
+  color: #ffe0a8;
+}
+.mods button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.field-tip {
+  margin: 4px 0;
+  min-height: 16px;
+  color: #edcd94;
+  font:
+    12px Consolas,
+    monospace;
+}
+@media (min-width: 800px) and (min-height: 600px) {
+  body.playing main {
+    width: min(1280px, 100%, calc((100dvh - 300px) * 2.1818 + 50px));
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  body.playing .mast {
+    padding-bottom: 8px;
+  }
+  body.playing h1 {
+    font-size: 32px;
+  }
+}
 .panel[data-mode="lobby"] h2 {
   font-size: clamp(20px, 3.2vw, 44px);
 }

@@ -114,6 +114,7 @@ async function profileRun(browser, targetPort, profile) {
         inputLatency: [],
         freeInputLatency: [],
         timedOut: 0,
+        timeoutContexts: [],
         lastAt: 0,
         lastTick: -1,
         lastMatch: null,
@@ -133,8 +134,22 @@ async function profileRun(browser, targetPort, profile) {
             x: match.player.x,
             dir: e.code === "KeyA" ? -1 : 1,
             id: room.matchId,
-            free: match.player.dashLeft<=0 && !match.player.slamming && match.player.recovery<=0 &&
-              Math.abs(match.player.knock)<15 && match.player.x>45 && match.player.x<Yard.width-45,
+            tick: match.tick,
+            atInput: {
+              vx: match.player.vx,
+              knock: match.player.knock,
+              dash: match.player.dashLeft,
+              slam: match.player.slamming,
+              recovery: match.player.recovery,
+              x: match.player.x,
+            },
+            free:
+              match.player.dashLeft <= 0 &&
+              !match.player.slamming &&
+              match.player.recovery <= 0 &&
+              Math.abs(match.player.knock) < 15 &&
+              match.player.x > 45 &&
+              match.player.x < Yard.width - 45,
           };
         }
       });
@@ -151,9 +166,29 @@ async function profileRun(browser, targetPort, profile) {
           if (q && q.id === room.matchId && match.player.hp) {
             if ((match.player.x - q.x) * q.dir > 1) {
               lab.inputLatency.push(now - q.t);
-              if(q.free)lab.freeInputLatency.push(now-q.t);
+              if (q.free) lab.freeInputLatency.push(now - q.t);
               lab.measure = null;
-            } else if (now - q.t > 400) {lab.timedOut++;lab.measure=null;}
+            } else if (now - q.t > 400) {
+              lab.timedOut++;
+              lab.timeoutContexts.push({
+                tick: q.tick,
+                direction: q.dir,
+                freeAtInput: q.free,
+                atInput: q.atInput,
+                after: {
+                  x: match.player.x,
+                  vx: match.player.vx,
+                  knock: match.player.knock,
+                  dash: match.player.dashLeft,
+                  slam: match.player.slamming,
+                  recovery: match.player.recovery,
+                  hp: match.player.hp,
+                  held: [...held],
+                  inputAgeMs: now - room.lastPacketAt,
+                },
+              });
+              lab.measure = null;
+            }
           } else lab.measure = null;
         } else lab.lastAt = 0;
         requestAnimationFrame(sample);
@@ -201,8 +236,10 @@ async function profileRun(browser, targetPort, profile) {
       finished,
       inputs: data.inputLatency.length,
       inputToMotionP95ms: pct(data.inputLatency, 0.95),
-      freeInputP95ms:pct(data.freeInputLatency,.95),freeInputs:data.freeInputLatency.length,
-      noDisplacementWithin400ms:data.timedOut,
+      freeInputP95ms: pct(data.freeInputLatency, 0.95),
+      freeInputs: data.freeInputLatency.length,
+      noDisplacementWithin400ms: data.timedOut,
+      timeoutContexts: data.timeoutContexts,
       samples: data.corrections.length,
       correctionP95px: pct(data.corrections, 0.95),
       frameP95ms: pct(data.frames, 0.95),

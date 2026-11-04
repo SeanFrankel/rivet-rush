@@ -9,6 +9,7 @@ Copy this file to `docs/playtests/YYYY-MM-DD-short-topic.md` after a session. Li
 | Comparison build, if any | |
 | Number of first-time / returning pilots | |
 | Conditions (bot/PvP, side, voice, network) | |
+| Field tips enabled, live coaching, replay/report artifact | |
 | Facilitator and decision owner | |
 
 ### Observation log

@@ -59,6 +59,12 @@ At home, a wounded pilot within 106 px horizontally of their reactor repairs 24 
 
 ## Live and solo play
 
+G sends a rally signal and H sends a retreat signal at the pointer's arena position. With the pointer outside the arena, the signal marks the pilot. A crew sees a circle/+ for rally or a triangle/! for retreat, plus an edge arrow for an off-screen location. Signals last five seconds. Each seat may send one every three seconds, including across a reconnect. The server supplies the sender's seat, bounds the position, rejects stale-match requests and delivers only to that crew. Signals are advisory: they do not change NPC behavior, reveal otherwise hidden information, affect combat or enter an input replay. Solo signals let a player practice the controls.
+
+On death, the recap groups HP actually lost during the preceding six seconds by credited attacker type or pilot kit. Barrier absorption and overkill are excluded; this is recent damage, not the pilot's lifetime damage or a count of attacks. It clears at respawn. A surviving ally becomes the camera subject during the respawn wait, while the local pilot's health and timer remain visible. The scoreboard's **shield given** counts newly granted barrier, which can expire unused; it is not damage absorbed.
+
+Optional field tips react to low health, farming progress and objective state. They explain existing rules and never alter the match. The rig shows purchased tiers, remaining scrap and disabled unaffordable/full tracks; keyboard purchases retain the same server checks.
+
 Bots can farm, buy builds suited to their kit, jump sentry shots, fall back to repair and rotate a pilot to the vault while a teammate holds lane. In a private room, a disconnected pilot gets a bot substitute while another human remains connected. The seat is reserved for 60 seconds. An online match continues when a player opens the menu. A solo skirmish pauses on Escape or focus loss.
 
 Human enjoyment, real internet conditions and balance between experienced human teams remain to be measured. The [playtest guide](playtesting.md) describes those checks.

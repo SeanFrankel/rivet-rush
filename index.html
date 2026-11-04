@@ -19,6 +19,7 @@
         </div>
         <div class="mast-tools">
           <span id="connection" class="chip">LOCAL</span
+          ><button class="quiet" id="tips" aria-pressed="true">Tips on</button
           ><button class="quiet" id="sound" aria-pressed="false">Sound off</button
           ><button class="quiet" id="menuBtn">Field menu</button>
         </div>
@@ -69,6 +70,7 @@
             </div>
             <div class="actions minor">
               <button id="saveReplay" class="text-button" hidden>Save match replay</button
+              ><button id="saveReport" class="text-button" hidden>Save playtest report</button
               ><button id="leave" class="text-button" hidden>Return to title</button>
             </div>
             <p id="message" role="status"></p>
@@ -106,10 +108,15 @@
           </div>
         </div>
       </section>
+      <div class="match-guidance">
+        <span id="buildHint"></span><span id="teamSignal" role="status"></span>
+      </div>
+      <p id="fieldTip" class="field-tip" hidden></p>
       <div class="quick-keys">
         <span><kbd>A D</kbd> move</span><span><kbd>W</kbd> jump</span><span><kbd>S</kbd> drop</span
         ><span><kbd>Shift</kbd> dash</span><span><kbd>J</kbd> fire</span
-        ><span><kbd>K</kbd> ability</span><span><kbd>Tab</kbd> score</span>
+        ><span><kbd>K</kbd> ability</span><span><kbd>Tab</kbd> score</span
+        ><span><kbd>G / H</kbd> rally / retreat</span>
       </div>
       <details class="guide">
         <summary>Field manual <span>Movement, attacks &amp; upgrades</span></summary>
@@ -128,7 +135,9 @@
             <b>Farm &amp; siege</b><br />Finish crawlers for bonus scrap and collect the glowing
             salvage. Buy up to six mods. Use 1 for damage, 2 for health and faster dashes, or 3 for
             stronger abilities. The next price is on your rig. Escort every third wave’s Breaker,
-            destroy the sentry and attack the reactor. Fall back to your base for repairs.
+            destroy the sentry and attack the reactor. Fall back to your base for repairs. G marks a
+            rally and H a retreat at your cursor, or at your pilot with the cursor outside the
+            arena. Only your crew sees these signals; bots keep their own plans.
           </p>
         </div>
       </details>
